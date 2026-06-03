@@ -1,0 +1,49 @@
+{
+  "trip": {
+    "destination": "大理",
+    "start_date": "2026-07-10",
+    "end_date": "2026-07-12",
+    "preferences": {
+      "activities": ["拍照", "闲逛"],
+      "gender": "女",
+      "style": "休闲",
+      "budget_per_item": 200.0
+    },
+    "is_complete": true
+  },
+  "weather": [
+    {
+      "date": "2026-07-10",
+      "temp_min": 18.0,
+      "temp_max": 26.0,
+      "condition": "晴",
+      "rain_prob": 10.0
+    }
+  ],
+  "outfits": [
+    {
+      "date": "2026-07-10",
+      "outfit_summary": "轻薄防晒衬衫 + 亚麻阔腿裤 + 白色运动鞋",
+      "search_keywords": ["女 防晒 衬衫 夏季", "女 亚麻 阔腿裤"]
+    }
+  ],
+  "products": [
+    {
+      "title": "轻薄防晒衬衫女夏季",
+      "pic_url": "https://img.alicdn.com/example.jpg",
+      "price": 16.37,
+      "detail_url": "https://item.taobao.com/item.htm?id=123",
+      "num_iid": "123",
+      "trip_date": "2026-07-10"
+    }
+  ],
+  "phase": "done",
+  "errors": [],
+  "trace": [
+    {
+      "agent": "Trip",
+      "message": "TripContext ready",
+      "level": "info"
+    }
+  ]
+}

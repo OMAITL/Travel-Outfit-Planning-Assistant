@@ -1,0 +1,2521 @@
+﻿{
+    "code":  200,
+    "msg":  "Success",
+    "total":  419,
+    "data":  [
+                 {
+                     "beijing_time":  "2026-05-27 04:32:56",
+                     "timestamp_ms":  1779827576000,
+                     "num_data":  11875,
+                     "main_data":  186.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 04:51:52",
+                     "timestamp_ms":  1779828712000,
+                     "num_data":  11874,
+                     "main_data":  186.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 05:09:58",
+                     "timestamp_ms":  1779829798000,
+                     "num_data":  11878,
+                     "main_data":  186.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 05:27:03",
+                     "timestamp_ms":  1779830823000,
+                     "num_data":  11879,
+                     "main_data":  187.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 05:44:26",
+                     "timestamp_ms":  1779831866000,
+                     "num_data":  11883,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 06:01:53",
+                     "timestamp_ms":  1779832913000,
+                     "num_data":  11886,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 06:18:47",
+                     "timestamp_ms":  1779833927000,
+                     "num_data":  11971,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 06:37:33",
+                     "timestamp_ms":  1779835053000,
+                     "num_data":  12028,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 06:55:20",
+                     "timestamp_ms":  1779836120000,
+                     "num_data":  12048,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 07:12:36",
+                     "timestamp_ms":  1779837156000,
+                     "num_data":  12145,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 07:30:34",
+                     "timestamp_ms":  1779838234000,
+                     "num_data":  12145,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 07:48:52",
+                     "timestamp_ms":  1779839332000,
+                     "num_data":  12213,
+                     "main_data":  186.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 08:08:14",
+                     "timestamp_ms":  1779840494000,
+                     "num_data":  12288,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 08:27:51",
+                     "timestamp_ms":  1779841671000,
+                     "num_data":  12318,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 08:48:27",
+                     "timestamp_ms":  1779842907000,
+                     "num_data":  12386,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 09:08:51",
+                     "timestamp_ms":  1779844131000,
+                     "num_data":  12430,
+                     "main_data":  187.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 09:32:10",
+                     "timestamp_ms":  1779845530000,
+                     "num_data":  12459,
+                     "main_data":  186.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 09:52:38",
+                     "timestamp_ms":  1779846758000,
+                     "num_data":  12475,
+                     "main_data":  185.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 10:12:37",
+                     "timestamp_ms":  1779847957000,
+                     "num_data":  12494,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 10:34:00",
+                     "timestamp_ms":  1779849240000,
+                     "num_data":  12510,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 10:53:44",
+                     "timestamp_ms":  1779850424000,
+                     "num_data":  12512,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 11:13:43",
+                     "timestamp_ms":  1779851623000,
+                     "num_data":  12516,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 11:34:11",
+                     "timestamp_ms":  1779852851000,
+                     "num_data":  12517,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 11:55:05",
+                     "timestamp_ms":  1779854105000,
+                     "num_data":  12518,
+                     "main_data":  185.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 12:15:13",
+                     "timestamp_ms":  1779855313000,
+                     "num_data":  12528,
+                     "main_data":  185.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 12:36:05",
+                     "timestamp_ms":  1779856565000,
+                     "num_data":  12535,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 12:55:07",
+                     "timestamp_ms":  1779857707000,
+                     "num_data":  12530,
+                     "main_data":  185.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 13:13:38",
+                     "timestamp_ms":  1779858818000,
+                     "num_data":  12526,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 13:31:42",
+                     "timestamp_ms":  1779859902000,
+                     "num_data":  12527,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 13:50:05",
+                     "timestamp_ms":  1779861005000,
+                     "num_data":  12521,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 14:08:38",
+                     "timestamp_ms":  1779862118000,
+                     "num_data":  12525,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 14:28:55",
+                     "timestamp_ms":  1779863335000,
+                     "num_data":  12521,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 14:48:14",
+                     "timestamp_ms":  1779864494000,
+                     "num_data":  12523,
+                     "main_data":  184.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 15:08:44",
+                     "timestamp_ms":  1779865724000,
+                     "num_data":  12551,
+                     "main_data":  183.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 15:28:46",
+                     "timestamp_ms":  1779866926000,
+                     "num_data":  12573,
+                     "main_data":  182.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 15:48:37",
+                     "timestamp_ms":  1779868117000,
+                     "num_data":  12588,
+                     "main_data":  183.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 16:08:14",
+                     "timestamp_ms":  1779869294000,
+                     "num_data":  12611,
+                     "main_data":  183.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 16:28:40",
+                     "timestamp_ms":  1779870520000,
+                     "num_data":  12615,
+                     "main_data":  183.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 16:48:26",
+                     "timestamp_ms":  1779871706000,
+                     "num_data":  12634,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 17:07:17",
+                     "timestamp_ms":  1779872837000,
+                     "num_data":  12649,
+                     "main_data":  184.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 17:26:53",
+                     "timestamp_ms":  1779874013000,
+                     "num_data":  12656,
+                     "main_data":  184.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 17:45:47",
+                     "timestamp_ms":  1779875147000,
+                     "num_data":  12657,
+                     "main_data":  184.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 18:07:19",
+                     "timestamp_ms":  1779876439000,
+                     "num_data":  12657,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 18:28:04",
+                     "timestamp_ms":  1779877684000,
+                     "num_data":  12654,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 18:47:59",
+                     "timestamp_ms":  1779878879000,
+                     "num_data":  12653,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 19:10:05",
+                     "timestamp_ms":  1779880205000,
+                     "num_data":  12648,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 19:30:31",
+                     "timestamp_ms":  1779881431000,
+                     "num_data":  12641,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 19:50:45",
+                     "timestamp_ms":  1779882645000,
+                     "num_data":  12560,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 20:13:33",
+                     "timestamp_ms":  1779884013000,
+                     "num_data":  12553,
+                     "main_data":  186.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 20:40:18",
+                     "timestamp_ms":  1779885618000,
+                     "num_data":  12538,
+                     "main_data":  190.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 21:07:36",
+                     "timestamp_ms":  1779887256000,
+                     "num_data":  12587,
+                     "main_data":  190.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 21:25:40",
+                     "timestamp_ms":  1779888340000,
+                     "num_data":  12587,
+                     "main_data":  190.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 21:43:48",
+                     "timestamp_ms":  1779889428000,
+                     "num_data":  12578,
+                     "main_data":  185.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 22:02:35",
+                     "timestamp_ms":  1779890555000,
+                     "num_data":  12554,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 22:20:55",
+                     "timestamp_ms":  1779891655000,
+                     "num_data":  12536,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 22:39:27",
+                     "timestamp_ms":  1779892767000,
+                     "num_data":  12535,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 23:00:23",
+                     "timestamp_ms":  1779894023000,
+                     "num_data":  12512,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 23:18:21",
+                     "timestamp_ms":  1779895101000,
+                     "num_data":  12413,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 23:36:48",
+                     "timestamp_ms":  1779896208000,
+                     "num_data":  12403,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-27 23:54:42",
+                     "timestamp_ms":  1779897282000,
+                     "num_data":  12393,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 00:11:19",
+                     "timestamp_ms":  1779898279000,
+                     "num_data":  12240,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 00:28:26",
+                     "timestamp_ms":  1779899306000,
+                     "num_data":  11993,
+                     "main_data":  192.88
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 00:44:15",
+                     "timestamp_ms":  1779900255000,
+                     "num_data":  11943,
+                     "main_data":  192.38
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 01:06:16",
+                     "timestamp_ms":  1779901576000,
+                     "num_data":  11919,
+                     "main_data":  192.38
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 01:24:56",
+                     "timestamp_ms":  1779902696000,
+                     "num_data":  11911,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 01:42:48",
+                     "timestamp_ms":  1779903768000,
+                     "num_data":  11908,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 02:00:55",
+                     "timestamp_ms":  1779904855000,
+                     "num_data":  11907,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 02:22:35",
+                     "timestamp_ms":  1779906155000,
+                     "num_data":  11895,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 02:41:22",
+                     "timestamp_ms":  1779907282000,
+                     "num_data":  11896,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 03:00:10",
+                     "timestamp_ms":  1779908410000,
+                     "num_data":  11895,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 03:18:48",
+                     "timestamp_ms":  1779909528000,
+                     "num_data":  11893,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 03:38:06",
+                     "timestamp_ms":  1779910686000,
+                     "num_data":  11888,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 03:57:02",
+                     "timestamp_ms":  1779911822000,
+                     "num_data":  11888,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 04:15:05",
+                     "timestamp_ms":  1779912905000,
+                     "num_data":  11883,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 04:34:46",
+                     "timestamp_ms":  1779914086000,
+                     "num_data":  11888,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 04:58:41",
+                     "timestamp_ms":  1779915521000,
+                     "num_data":  11884,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 05:16:27",
+                     "timestamp_ms":  1779916587000,
+                     "num_data":  11884,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 05:34:32",
+                     "timestamp_ms":  1779917672000,
+                     "num_data":  11884,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 05:52:13",
+                     "timestamp_ms":  1779918733000,
+                     "num_data":  11882,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 06:09:40",
+                     "timestamp_ms":  1779919780000,
+                     "num_data":  11963,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 06:29:11",
+                     "timestamp_ms":  1779920951000,
+                     "num_data":  11973,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 06:48:09",
+                     "timestamp_ms":  1779922089000,
+                     "num_data":  12043,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 07:08:26",
+                     "timestamp_ms":  1779923306000,
+                     "num_data":  12110,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 07:27:41",
+                     "timestamp_ms":  1779924461000,
+                     "num_data":  12127,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 07:47:42",
+                     "timestamp_ms":  1779925662000,
+                     "num_data":  12193,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 08:05:24",
+                     "timestamp_ms":  1779926724000,
+                     "num_data":  12239,
+                     "main_data":  196.66
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 08:24:14",
+                     "timestamp_ms":  1779927854000,
+                     "num_data":  12295,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 08:45:20",
+                     "timestamp_ms":  1779929120000,
+                     "num_data":  12369,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 09:04:21",
+                     "timestamp_ms":  1779930261000,
+                     "num_data":  12400,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 09:24:28",
+                     "timestamp_ms":  1779931468000,
+                     "num_data":  12441,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 09:46:09",
+                     "timestamp_ms":  1779932769000,
+                     "num_data":  12445,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 10:04:31",
+                     "timestamp_ms":  1779933871000,
+                     "num_data":  12464,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 10:23:32",
+                     "timestamp_ms":  1779935012000,
+                     "num_data":  12464,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 10:45:46",
+                     "timestamp_ms":  1779936346000,
+                     "num_data":  12472,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 11:05:24",
+                     "timestamp_ms":  1779937524000,
+                     "num_data":  12476,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 11:24:30",
+                     "timestamp_ms":  1779938670000,
+                     "num_data":  12467,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 11:48:33",
+                     "timestamp_ms":  1779940113000,
+                     "num_data":  12469,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 12:08:24",
+                     "timestamp_ms":  1779941304000,
+                     "num_data":  12477,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 12:30:11",
+                     "timestamp_ms":  1779942611000,
+                     "num_data":  12465,
+                     "main_data":  193.89
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 12:50:29",
+                     "timestamp_ms":  1779943829000,
+                     "num_data":  12459,
+                     "main_data":  193.89
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 13:10:27",
+                     "timestamp_ms":  1779945027000,
+                     "num_data":  12454,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 13:31:41",
+                     "timestamp_ms":  1779946301000,
+                     "num_data":  12446,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 13:51:46",
+                     "timestamp_ms":  1779947506000,
+                     "num_data":  12440,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 14:10:43",
+                     "timestamp_ms":  1779948643000,
+                     "num_data":  12439,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 14:29:46",
+                     "timestamp_ms":  1779949786000,
+                     "num_data":  12434,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 14:54:39",
+                     "timestamp_ms":  1779951279000,
+                     "num_data":  12414,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 15:15:13",
+                     "timestamp_ms":  1779952513000,
+                     "num_data":  12471,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 15:35:30",
+                     "timestamp_ms":  1779953730000,
+                     "num_data":  12487,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 15:58:19",
+                     "timestamp_ms":  1779955099000,
+                     "num_data":  12486,
+                     "main_data":  192.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 16:20:41",
+                     "timestamp_ms":  1779956441000,
+                     "num_data":  12486,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 16:42:19",
+                     "timestamp_ms":  1779957739000,
+                     "num_data":  12509,
+                     "main_data":  191.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 17:02:55",
+                     "timestamp_ms":  1779958975000,
+                     "num_data":  12518,
+                     "main_data":  191.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 17:23:30",
+                     "timestamp_ms":  1779960210000,
+                     "num_data":  12527,
+                     "main_data":  190.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 17:46:34",
+                     "timestamp_ms":  1779961594000,
+                     "num_data":  12528,
+                     "main_data":  191.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 18:08:44",
+                     "timestamp_ms":  1779962924000,
+                     "num_data":  12521,
+                     "main_data":  191.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 18:40:16",
+                     "timestamp_ms":  1779964816000,
+                     "num_data":  12520,
+                     "main_data":  191.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 19:01:28",
+                     "timestamp_ms":  1779966088000,
+                     "num_data":  12504,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 19:22:40",
+                     "timestamp_ms":  1779967360000,
+                     "num_data":  12480,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 19:44:45",
+                     "timestamp_ms":  1779968685000,
+                     "num_data":  12482,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 20:08:41",
+                     "timestamp_ms":  1779970121000,
+                     "num_data":  12472,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 20:36:15",
+                     "timestamp_ms":  1779971775000,
+                     "num_data":  12472,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 21:01:17",
+                     "timestamp_ms":  1779973277000,
+                     "num_data":  12457,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 21:20:14",
+                     "timestamp_ms":  1779974414000,
+                     "num_data":  12452,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 21:40:43",
+                     "timestamp_ms":  1779975643000,
+                     "num_data":  12442,
+                     "main_data":  195.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 22:00:52",
+                     "timestamp_ms":  1779976852000,
+                     "num_data":  12425,
+                     "main_data":  195.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 22:21:23",
+                     "timestamp_ms":  1779978083000,
+                     "num_data":  12397,
+                     "main_data":  195.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 22:42:32",
+                     "timestamp_ms":  1779979352000,
+                     "num_data":  12386,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 23:01:18",
+                     "timestamp_ms":  1779980478000,
+                     "num_data":  12360,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 23:21:25",
+                     "timestamp_ms":  1779981685000,
+                     "num_data":  12262,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-28 23:41:05",
+                     "timestamp_ms":  1779982865000,
+                     "num_data":  12241,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 00:00:12",
+                     "timestamp_ms":  1779984012000,
+                     "num_data":  12230,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 00:16:58",
+                     "timestamp_ms":  1779985018000,
+                     "num_data":  11979,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 00:34:06",
+                     "timestamp_ms":  1779986046000,
+                     "num_data":  11778,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 00:51:48",
+                     "timestamp_ms":  1779987108000,
+                     "num_data":  11775,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 01:10:37",
+                     "timestamp_ms":  1779988237000,
+                     "num_data":  11758,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 01:30:19",
+                     "timestamp_ms":  1779989419000,
+                     "num_data":  11749,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 01:48:30",
+                     "timestamp_ms":  1779990510000,
+                     "num_data":  11745,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 02:07:44",
+                     "timestamp_ms":  1779991664000,
+                     "num_data":  11732,
+                     "main_data":  194.44
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 02:26:31",
+                     "timestamp_ms":  1779992791000,
+                     "num_data":  11725,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 02:46:08",
+                     "timestamp_ms":  1779993968000,
+                     "num_data":  11723,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 03:05:37",
+                     "timestamp_ms":  1779995137000,
+                     "num_data":  11721,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 03:23:55",
+                     "timestamp_ms":  1779996235000,
+                     "num_data":  11725,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 03:43:43",
+                     "timestamp_ms":  1779997423000,
+                     "num_data":  11725,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 04:02:17",
+                     "timestamp_ms":  1779998537000,
+                     "num_data":  11722,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 04:20:55",
+                     "timestamp_ms":  1779999655000,
+                     "num_data":  11721,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 04:40:19",
+                     "timestamp_ms":  1780000819000,
+                     "num_data":  11718,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 04:58:38",
+                     "timestamp_ms":  1780001918000,
+                     "num_data":  11715,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 05:15:47",
+                     "timestamp_ms":  1780002947000,
+                     "num_data":  11713,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 05:33:09",
+                     "timestamp_ms":  1780003989000,
+                     "num_data":  11712,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 05:51:40",
+                     "timestamp_ms":  1780005100000,
+                     "num_data":  11706,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 06:09:09",
+                     "timestamp_ms":  1780006149000,
+                     "num_data":  11789,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 06:28:21",
+                     "timestamp_ms":  1780007301000,
+                     "num_data":  11796,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 06:46:12",
+                     "timestamp_ms":  1780008372000,
+                     "num_data":  11865,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 07:03:55",
+                     "timestamp_ms":  1780009435000,
+                     "num_data":  11899,
+                     "main_data":  193.99
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 09:55:33",
+                     "timestamp_ms":  1780019733000,
+                     "num_data":  12262,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 10:16:04",
+                     "timestamp_ms":  1780020964000,
+                     "num_data":  12285,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 10:38:42",
+                     "timestamp_ms":  1780022322000,
+                     "num_data":  12293,
+                     "main_data":  194.48
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 11:00:08",
+                     "timestamp_ms":  1780023608000,
+                     "num_data":  12290,
+                     "main_data":  194.48
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 11:23:13",
+                     "timestamp_ms":  1780024993000,
+                     "num_data":  12286,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 11:49:13",
+                     "timestamp_ms":  1780026553000,
+                     "num_data":  12285,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 12:13:01",
+                     "timestamp_ms":  1780027981000,
+                     "num_data":  12292,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 12:37:01",
+                     "timestamp_ms":  1780029421000,
+                     "num_data":  12293,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 12:59:02",
+                     "timestamp_ms":  1780030742000,
+                     "num_data":  12286,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 13:20:16",
+                     "timestamp_ms":  1780032016000,
+                     "num_data":  12284,
+                     "main_data":  194.6
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 13:45:32",
+                     "timestamp_ms":  1780033532000,
+                     "num_data":  12281,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 14:07:59",
+                     "timestamp_ms":  1780034879000,
+                     "num_data":  12277,
+                     "main_data":  194.49
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 14:30:46",
+                     "timestamp_ms":  1780036246000,
+                     "num_data":  12262,
+                     "main_data":  194.3
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 14:54:45",
+                     "timestamp_ms":  1780037685000,
+                     "num_data":  12268,
+                     "main_data":  194.3
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 15:18:34",
+                     "timestamp_ms":  1780039114000,
+                     "num_data":  12313,
+                     "main_data":  193.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 15:42:50",
+                     "timestamp_ms":  1780040570000,
+                     "num_data":  12343,
+                     "main_data":  192.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 16:05:28",
+                     "timestamp_ms":  1780041928000,
+                     "num_data":  12355,
+                     "main_data":  192.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 16:27:33",
+                     "timestamp_ms":  1780043253000,
+                     "num_data":  12355,
+                     "main_data":  192.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 16:50:21",
+                     "timestamp_ms":  1780044621000,
+                     "num_data":  12357,
+                     "main_data":  194.3
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 17:12:58",
+                     "timestamp_ms":  1780045978000,
+                     "num_data":  12359,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 17:36:06",
+                     "timestamp_ms":  1780047366000,
+                     "num_data":  12365,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 17:57:48",
+                     "timestamp_ms":  1780048668000,
+                     "num_data":  12361,
+                     "main_data":  193.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 18:23:49",
+                     "timestamp_ms":  1780050229000,
+                     "num_data":  12375,
+                     "main_data":  193.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 18:44:47",
+                     "timestamp_ms":  1780051487000,
+                     "num_data":  12353,
+                     "main_data":  193.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 19:04:58",
+                     "timestamp_ms":  1780052698000,
+                     "num_data":  12347,
+                     "main_data":  193.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 19:25:31",
+                     "timestamp_ms":  1780053931000,
+                     "num_data":  12340,
+                     "main_data":  194.3
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 19:45:52",
+                     "timestamp_ms":  1780055152000,
+                     "num_data":  12335,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 20:09:03",
+                     "timestamp_ms":  1780056543000,
+                     "num_data":  12327,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 20:32:30",
+                     "timestamp_ms":  1780057950000,
+                     "num_data":  12320,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 20:56:30",
+                     "timestamp_ms":  1780059390000,
+                     "num_data":  12318,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 21:15:52",
+                     "timestamp_ms":  1780060552000,
+                     "num_data":  12293,
+                     "main_data":  195.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 21:34:26",
+                     "timestamp_ms":  1780061666000,
+                     "num_data":  12284,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 21:52:05",
+                     "timestamp_ms":  1780062725000,
+                     "num_data":  12280,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 22:09:34",
+                     "timestamp_ms":  1780063774000,
+                     "num_data":  12252,
+                     "main_data":  196.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 22:26:39",
+                     "timestamp_ms":  1780064799000,
+                     "num_data":  12252,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 22:46:34",
+                     "timestamp_ms":  1780065994000,
+                     "num_data":  12239,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 23:04:32",
+                     "timestamp_ms":  1780067072000,
+                     "num_data":  12155,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 23:22:55",
+                     "timestamp_ms":  1780068175000,
+                     "num_data":  12114,
+                     "main_data":  195.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-29 23:45:19",
+                     "timestamp_ms":  1780069519000,
+                     "num_data":  12104,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 00:03:01",
+                     "timestamp_ms":  1780070581000,
+                     "num_data":  12042,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 00:37:22",
+                     "timestamp_ms":  1780072642000,
+                     "num_data":  11650,
+                     "main_data":  195.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 01:13:49",
+                     "timestamp_ms":  1780074829000,
+                     "num_data":  11628,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 01:49:57",
+                     "timestamp_ms":  1780076997000,
+                     "num_data":  11613,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 02:29:37",
+                     "timestamp_ms":  1780079377000,
+                     "num_data":  11602,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 03:05:01",
+                     "timestamp_ms":  1780081501000,
+                     "num_data":  11599,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 03:44:53",
+                     "timestamp_ms":  1780083893000,
+                     "num_data":  11596,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 04:24:38",
+                     "timestamp_ms":  1780086278000,
+                     "num_data":  11588,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 05:01:51",
+                     "timestamp_ms":  1780088511000,
+                     "num_data":  11590,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 05:41:06",
+                     "timestamp_ms":  1780090866000,
+                     "num_data":  11598,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 06:18:20",
+                     "timestamp_ms":  1780093100000,
+                     "num_data":  11689,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 07:01:06",
+                     "timestamp_ms":  1780095666000,
+                     "num_data":  11762,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 07:40:52",
+                     "timestamp_ms":  1780098052000,
+                     "num_data":  11924,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 08:19:11",
+                     "timestamp_ms":  1780100351000,
+                     "num_data":  12030,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 08:58:35",
+                     "timestamp_ms":  1780102715000,
+                     "num_data":  12091,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 09:39:23",
+                     "timestamp_ms":  1780105163000,
+                     "num_data":  12156,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 10:17:20",
+                     "timestamp_ms":  1780107440000,
+                     "num_data":  12165,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 10:57:59",
+                     "timestamp_ms":  1780109879000,
+                     "num_data":  12179,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 11:39:48",
+                     "timestamp_ms":  1780112388000,
+                     "num_data":  12160,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 12:20:37",
+                     "timestamp_ms":  1780114837000,
+                     "num_data":  12165,
+                     "main_data":  193.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 13:03:09",
+                     "timestamp_ms":  1780117389000,
+                     "num_data":  12157,
+                     "main_data":  193.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 13:42:31",
+                     "timestamp_ms":  1780119751000,
+                     "num_data":  12138,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 14:25:50",
+                     "timestamp_ms":  1780122350000,
+                     "num_data":  12130,
+                     "main_data":  196.8
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 15:06:53",
+                     "timestamp_ms":  1780124813000,
+                     "num_data":  12135,
+                     "main_data":  196.3
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 15:47:40",
+                     "timestamp_ms":  1780127260000,
+                     "num_data":  12148,
+                     "main_data":  192.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 16:31:20",
+                     "timestamp_ms":  1780129880000,
+                     "num_data":  12148,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 17:10:55",
+                     "timestamp_ms":  1780132255000,
+                     "num_data":  12146,
+                     "main_data":  194.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 17:42:43",
+                     "timestamp_ms":  1780134163000,
+                     "num_data":  12144,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 18:24:59",
+                     "timestamp_ms":  1780136699000,
+                     "num_data":  12177,
+                     "main_data":  196.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 19:11:25",
+                     "timestamp_ms":  1780139485000,
+                     "num_data":  12166,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 19:50:10",
+                     "timestamp_ms":  1780141810000,
+                     "num_data":  12153,
+                     "main_data":  192.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 20:46:55",
+                     "timestamp_ms":  1780145215000,
+                     "num_data":  12134,
+                     "main_data":  192.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 21:29:40",
+                     "timestamp_ms":  1780147780000,
+                     "num_data":  12112,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 22:04:20",
+                     "timestamp_ms":  1780149860000,
+                     "num_data":  12076,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 22:43:22",
+                     "timestamp_ms":  1780152202000,
+                     "num_data":  12065,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 23:17:47",
+                     "timestamp_ms":  1780154267000,
+                     "num_data":  11961,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-30 23:52:27",
+                     "timestamp_ms":  1780156347000,
+                     "num_data":  11936,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 00:08:52",
+                     "timestamp_ms":  1780157332000,
+                     "num_data":  11805,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 00:44:15",
+                     "timestamp_ms":  1780159455000,
+                     "num_data":  11500,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 01:21:01",
+                     "timestamp_ms":  1780161661000,
+                     "num_data":  11480,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 01:57:23",
+                     "timestamp_ms":  1780163843000,
+                     "num_data":  11460,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 02:33:34",
+                     "timestamp_ms":  1780166014000,
+                     "num_data":  11437,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 03:10:47",
+                     "timestamp_ms":  1780168247000,
+                     "num_data":  11434,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 03:47:52",
+                     "timestamp_ms":  1780170472000,
+                     "num_data":  11428,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 04:22:16",
+                     "timestamp_ms":  1780172536000,
+                     "num_data":  11419,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 04:56:11",
+                     "timestamp_ms":  1780174571000,
+                     "num_data":  11418,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 05:31:21",
+                     "timestamp_ms":  1780176681000,
+                     "num_data":  11421,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 06:03:55",
+                     "timestamp_ms":  1780178635000,
+                     "num_data":  11443,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 06:38:35",
+                     "timestamp_ms":  1780180715000,
+                     "num_data":  11570,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 07:18:03",
+                     "timestamp_ms":  1780183083000,
+                     "num_data":  11666,
+                     "main_data":  195.39
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 07:53:58",
+                     "timestamp_ms":  1780185238000,
+                     "num_data":  11732,
+                     "main_data":  195.39
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 08:29:59",
+                     "timestamp_ms":  1780187399000,
+                     "num_data":  11823,
+                     "main_data":  195.39
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 09:05:07",
+                     "timestamp_ms":  1780189507000,
+                     "num_data":  11919,
+                     "main_data":  195.39
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 09:42:08",
+                     "timestamp_ms":  1780191728000,
+                     "num_data":  11953,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 10:20:26",
+                     "timestamp_ms":  1780194026000,
+                     "num_data":  11973,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 10:58:24",
+                     "timestamp_ms":  1780196304000,
+                     "num_data":  11982,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 11:38:49",
+                     "timestamp_ms":  1780198729000,
+                     "num_data":  11980,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 12:18:08",
+                     "timestamp_ms":  1780201088000,
+                     "num_data":  11992,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 12:57:36",
+                     "timestamp_ms":  1780203456000,
+                     "num_data":  11995,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 13:38:40",
+                     "timestamp_ms":  1780205920000,
+                     "num_data":  11991,
+                     "main_data":  196.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 14:22:31",
+                     "timestamp_ms":  1780208551000,
+                     "num_data":  11978,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 15:02:03",
+                     "timestamp_ms":  1780210923000,
+                     "num_data":  12005,
+                     "main_data":  196.9
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 15:46:00",
+                     "timestamp_ms":  1780213560000,
+                     "num_data":  12026,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 16:30:31",
+                     "timestamp_ms":  1780216231000,
+                     "num_data":  12003,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 17:13:32",
+                     "timestamp_ms":  1780218812000,
+                     "num_data":  11994,
+                     "main_data":  196.5
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 17:58:46",
+                     "timestamp_ms":  1780221526000,
+                     "num_data":  11990,
+                     "main_data":  196.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 18:41:11",
+                     "timestamp_ms":  1780224071000,
+                     "num_data":  11976,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 19:23:55",
+                     "timestamp_ms":  1780226635000,
+                     "num_data":  11972,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 20:19:05",
+                     "timestamp_ms":  1780229945000,
+                     "num_data":  11961,
+                     "main_data":  196.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 21:19:18",
+                     "timestamp_ms":  1780233558000,
+                     "num_data":  11948,
+                     "main_data":  196.2
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 21:55:28",
+                     "timestamp_ms":  1780235728000,
+                     "num_data":  11936,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 22:32:17",
+                     "timestamp_ms":  1780237937000,
+                     "num_data":  11919,
+                     "main_data":  195.4
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 23:17:38",
+                     "timestamp_ms":  1780240658000,
+                     "num_data":  11821,
+                     "main_data":  196.0
+                 },
+                 {
+                     "beijing_time":  "2026-05-31 23:55:47",
+                     "timestamp_ms":  1780242947000,
+                     "num_data":  11804,
+                     "main_data":  196.3
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 00:13:46",
+                     "timestamp_ms":  1780244026000,
+                     "num_data":  11607,
+                     "main_data":  196.3
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 00:48:05",
+                     "timestamp_ms":  1780246085000,
+                     "num_data":  11366,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 01:24:17",
+                     "timestamp_ms":  1780248257000,
+                     "num_data":  11346,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 02:00:38",
+                     "timestamp_ms":  1780250438000,
+                     "num_data":  11341,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 02:36:03",
+                     "timestamp_ms":  1780252563000,
+                     "num_data":  11322,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 03:13:37",
+                     "timestamp_ms":  1780254817000,
+                     "num_data":  11333,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 03:51:41",
+                     "timestamp_ms":  1780257101000,
+                     "num_data":  11333,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 04:28:59",
+                     "timestamp_ms":  1780259339000,
+                     "num_data":  11333,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 05:07:57",
+                     "timestamp_ms":  1780261677000,
+                     "num_data":  11336,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 05:43:42",
+                     "timestamp_ms":  1780263822000,
+                     "num_data":  11337,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 06:19:51",
+                     "timestamp_ms":  1780265991000,
+                     "num_data":  11434,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 06:55:57",
+                     "timestamp_ms":  1780268157000,
+                     "num_data":  11468,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 07:36:13",
+                     "timestamp_ms":  1780270573000,
+                     "num_data":  11601,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 08:14:39",
+                     "timestamp_ms":  1780272879000,
+                     "num_data":  11730,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 08:48:13",
+                     "timestamp_ms":  1780274893000,
+                     "num_data":  11794,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 09:29:45",
+                     "timestamp_ms":  1780277385000,
+                     "num_data":  11855,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 10:11:42",
+                     "timestamp_ms":  1780279902000,
+                     "num_data":  11884,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 10:50:29",
+                     "timestamp_ms":  1780282229000,
+                     "num_data":  11897,
+                     "main_data":  197.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 11:35:30",
+                     "timestamp_ms":  1780284930000,
+                     "num_data":  11887,
+                     "main_data":  197.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 12:15:31",
+                     "timestamp_ms":  1780287331000,
+                     "num_data":  11912,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 12:56:50",
+                     "timestamp_ms":  1780289810000,
+                     "num_data":  11902,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 13:36:34",
+                     "timestamp_ms":  1780292194000,
+                     "num_data":  11898,
+                     "main_data":  194.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 14:19:00",
+                     "timestamp_ms":  1780294740000,
+                     "num_data":  11888,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 15:00:13",
+                     "timestamp_ms":  1780297213000,
+                     "num_data":  11891,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 15:41:20",
+                     "timestamp_ms":  1780299680000,
+                     "num_data":  11910,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 16:21:35",
+                     "timestamp_ms":  1780302095000,
+                     "num_data":  11935,
+                     "main_data":  196.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 17:03:31",
+                     "timestamp_ms":  1780304611000,
+                     "num_data":  11933,
+                     "main_data":  195.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 17:43:53",
+                     "timestamp_ms":  1780307033000,
+                     "num_data":  11939,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 18:26:23",
+                     "timestamp_ms":  1780309583000,
+                     "num_data":  11965,
+                     "main_data":  194.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 19:08:12",
+                     "timestamp_ms":  1780312092000,
+                     "num_data":  11920,
+                     "main_data":  196.88
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 19:46:32",
+                     "timestamp_ms":  1780314392000,
+                     "num_data":  11907,
+                     "main_data":  198.8
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 20:41:49",
+                     "timestamp_ms":  1780317709000,
+                     "num_data":  11890,
+                     "main_data":  198.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 21:32:19",
+                     "timestamp_ms":  1780320739000,
+                     "num_data":  11849,
+                     "main_data":  198.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 22:13:17",
+                     "timestamp_ms":  1780323197000,
+                     "num_data":  11819,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 22:54:04",
+                     "timestamp_ms":  1780325644000,
+                     "num_data":  11815,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-01 23:34:30",
+                     "timestamp_ms":  1780328070000,
+                     "num_data":  11742,
+                     "main_data":  198.79
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 00:11:23",
+                     "timestamp_ms":  1780330283000,
+                     "num_data":  11571,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 00:30:24",
+                     "timestamp_ms":  1780331424000,
+                     "num_data":  11310,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 00:50:48",
+                     "timestamp_ms":  1780332648000,
+                     "num_data":  11292,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 01:11:14",
+                     "timestamp_ms":  1780333874000,
+                     "num_data":  11268,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 01:31:13",
+                     "timestamp_ms":  1780335073000,
+                     "num_data":  11267,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 01:52:15",
+                     "timestamp_ms":  1780336335000,
+                     "num_data":  11270,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 02:12:04",
+                     "timestamp_ms":  1780337524000,
+                     "num_data":  11255,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 02:31:09",
+                     "timestamp_ms":  1780338669000,
+                     "num_data":  11253,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 02:51:25",
+                     "timestamp_ms":  1780339885000,
+                     "num_data":  11250,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 03:13:20",
+                     "timestamp_ms":  1780341200000,
+                     "num_data":  11250,
+                     "main_data":  199.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 03:34:08",
+                     "timestamp_ms":  1780342448000,
+                     "num_data":  11252,
+                     "main_data":  199.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 03:54:19",
+                     "timestamp_ms":  1780343659000,
+                     "num_data":  11250,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 04:15:35",
+                     "timestamp_ms":  1780344935000,
+                     "num_data":  11251,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 04:36:34",
+                     "timestamp_ms":  1780346194000,
+                     "num_data":  11250,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 04:57:47",
+                     "timestamp_ms":  1780347467000,
+                     "num_data":  11250,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 05:22:33",
+                     "timestamp_ms":  1780348953000,
+                     "num_data":  11253,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 05:42:46",
+                     "timestamp_ms":  1780350166000,
+                     "num_data":  11254,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 06:02:10",
+                     "timestamp_ms":  1780351330000,
+                     "num_data":  11260,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 06:21:22",
+                     "timestamp_ms":  1780352482000,
+                     "num_data":  11351,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 06:39:41",
+                     "timestamp_ms":  1780353581000,
+                     "num_data":  11409,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 06:57:49",
+                     "timestamp_ms":  1780354669000,
+                     "num_data":  11406,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 07:17:01",
+                     "timestamp_ms":  1780355821000,
+                     "num_data":  11490,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 07:37:03",
+                     "timestamp_ms":  1780357023000,
+                     "num_data":  11533,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 07:57:54",
+                     "timestamp_ms":  1780358274000,
+                     "num_data":  11559,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 08:17:12",
+                     "timestamp_ms":  1780359432000,
+                     "num_data":  11660,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 08:37:03",
+                     "timestamp_ms":  1780360623000,
+                     "num_data":  11717,
+                     "main_data":  200.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 09:01:38",
+                     "timestamp_ms":  1780362098000,
+                     "num_data":  11754,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 09:21:51",
+                     "timestamp_ms":  1780363311000,
+                     "num_data":  11805,
+                     "main_data":  199.98
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 09:44:55",
+                     "timestamp_ms":  1780364695000,
+                     "num_data":  11811,
+                     "main_data":  199.98
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 10:06:15",
+                     "timestamp_ms":  1780365975000,
+                     "num_data":  11839,
+                     "main_data":  199.98
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 10:26:42",
+                     "timestamp_ms":  1780367202000,
+                     "num_data":  11829,
+                     "main_data":  199.98
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 10:47:58",
+                     "timestamp_ms":  1780368478000,
+                     "num_data":  11822,
+                     "main_data":  200.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 11:09:53",
+                     "timestamp_ms":  1780369793000,
+                     "num_data":  11830,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 11:31:07",
+                     "timestamp_ms":  1780371067000,
+                     "num_data":  11830,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 11:51:10",
+                     "timestamp_ms":  1780372270000,
+                     "num_data":  11822,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 12:17:23",
+                     "timestamp_ms":  1780373843000,
+                     "num_data":  11835,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 12:38:24",
+                     "timestamp_ms":  1780375104000,
+                     "num_data":  11834,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 12:59:17",
+                     "timestamp_ms":  1780376357000,
+                     "num_data":  11824,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 13:18:07",
+                     "timestamp_ms":  1780377487000,
+                     "num_data":  11816,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 13:38:39",
+                     "timestamp_ms":  1780378719000,
+                     "num_data":  11809,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 13:59:59",
+                     "timestamp_ms":  1780379999000,
+                     "num_data":  11809,
+                     "main_data":  199.98
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 14:21:12",
+                     "timestamp_ms":  1780381272000,
+                     "num_data":  11818,
+                     "main_data":  199.97
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 14:42:01",
+                     "timestamp_ms":  1780382521000,
+                     "num_data":  11806,
+                     "main_data":  199.98
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 15:04:15",
+                     "timestamp_ms":  1780383855000,
+                     "num_data":  11820,
+                     "main_data":  198.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 15:27:20",
+                     "timestamp_ms":  1780385240000,
+                     "num_data":  11846,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 15:49:12",
+                     "timestamp_ms":  1780386552000,
+                     "num_data":  11838,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 16:12:33",
+                     "timestamp_ms":  1780387953000,
+                     "num_data":  11837,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 16:34:27",
+                     "timestamp_ms":  1780389267000,
+                     "num_data":  11836,
+                     "main_data":  199.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 16:56:24",
+                     "timestamp_ms":  1780390584000,
+                     "num_data":  11832,
+                     "main_data":  199.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 17:18:23",
+                     "timestamp_ms":  1780391903000,
+                     "num_data":  11827,
+                     "main_data":  198.95
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 17:39:30",
+                     "timestamp_ms":  1780393170000,
+                     "num_data":  11831,
+                     "main_data":  198.95
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 18:05:49",
+                     "timestamp_ms":  1780394749000,
+                     "num_data":  11831,
+                     "main_data":  198.95
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 18:29:28",
+                     "timestamp_ms":  1780396168000,
+                     "num_data":  11834,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 18:53:33",
+                     "timestamp_ms":  1780397613000,
+                     "num_data":  11810,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 19:14:55",
+                     "timestamp_ms":  1780398895000,
+                     "num_data":  11799,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 19:38:08",
+                     "timestamp_ms":  1780400288000,
+                     "num_data":  11797,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 20:02:28",
+                     "timestamp_ms":  1780401748000,
+                     "num_data":  11791,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 20:29:36",
+                     "timestamp_ms":  1780403376000,
+                     "num_data":  11785,
+                     "main_data":  197.55
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 20:41:43",
+                     "timestamp_ms":  1780404103000,
+                     "num_data":  11782,
+                     "main_data":  197.55
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 21:02:02",
+                     "timestamp_ms":  1780405322000,
+                     "num_data":  11772,
+                     "main_data":  197.55
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 21:22:17",
+                     "timestamp_ms":  1780406537000,
+                     "num_data":  11769,
+                     "main_data":  197.55
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 21:41:48",
+                     "timestamp_ms":  1780407708000,
+                     "num_data":  11757,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 22:02:36",
+                     "timestamp_ms":  1780408956000,
+                     "num_data":  11746,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 22:30:56",
+                     "timestamp_ms":  1780410656000,
+                     "num_data":  11741,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 22:50:35",
+                     "timestamp_ms":  1780411835000,
+                     "num_data":  11745,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 23:10:44",
+                     "timestamp_ms":  1780413044000,
+                     "num_data":  11638,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 23:31:27",
+                     "timestamp_ms":  1780414287000,
+                     "num_data":  11632,
+                     "main_data":  198.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-02 23:51:35",
+                     "timestamp_ms":  1780415495000,
+                     "num_data":  11625,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 00:12:54",
+                     "timestamp_ms":  1780416774000,
+                     "num_data":  11433,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 00:28:54",
+                     "timestamp_ms":  1780417734000,
+                     "num_data":  11206,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 00:46:42",
+                     "timestamp_ms":  1780418802000,
+                     "num_data":  11173,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 01:11:19",
+                     "timestamp_ms":  1780420279000,
+                     "num_data":  11156,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 01:29:52",
+                     "timestamp_ms":  1780421392000,
+                     "num_data":  11163,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 01:49:08",
+                     "timestamp_ms":  1780422548000,
+                     "num_data":  11162,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 02:07:35",
+                     "timestamp_ms":  1780423655000,
+                     "num_data":  11146,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 02:26:50",
+                     "timestamp_ms":  1780424810000,
+                     "num_data":  11149,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 02:51:26",
+                     "timestamp_ms":  1780426286000,
+                     "num_data":  11148,
+                     "main_data":  197.5
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 03:11:33",
+                     "timestamp_ms":  1780427493000,
+                     "num_data":  11143,
+                     "main_data":  197.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 03:32:56",
+                     "timestamp_ms":  1780428776000,
+                     "num_data":  11148,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 03:54:11",
+                     "timestamp_ms":  1780430051000,
+                     "num_data":  11152,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 04:13:17",
+                     "timestamp_ms":  1780431197000,
+                     "num_data":  11155,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 04:33:32",
+                     "timestamp_ms":  1780432412000,
+                     "num_data":  11155,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 04:57:43",
+                     "timestamp_ms":  1780433863000,
+                     "num_data":  11155,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 05:16:26",
+                     "timestamp_ms":  1780434986000,
+                     "num_data":  11156,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 05:34:46",
+                     "timestamp_ms":  1780436086000,
+                     "num_data":  11154,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 05:53:29",
+                     "timestamp_ms":  1780437209000,
+                     "num_data":  11149,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 06:11:49",
+                     "timestamp_ms":  1780438309000,
+                     "num_data":  11247,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 06:31:22",
+                     "timestamp_ms":  1780439482000,
+                     "num_data":  11250,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 06:50:31",
+                     "timestamp_ms":  1780440631000,
+                     "num_data":  11307,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 07:10:20",
+                     "timestamp_ms":  1780441820000,
+                     "num_data":  11385,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 07:30:54",
+                     "timestamp_ms":  1780443054000,
+                     "num_data":  11392,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 07:53:14",
+                     "timestamp_ms":  1780444394000,
+                     "num_data":  11455,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 08:12:33",
+                     "timestamp_ms":  1780445553000,
+                     "num_data":  11554,
+                     "main_data":  198.2
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 08:33:37",
+                     "timestamp_ms":  1780446817000,
+                     "num_data":  11572,
+                     "main_data":  198.3
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 08:52:31",
+                     "timestamp_ms":  1780447951000,
+                     "num_data":  11619,
+                     "main_data":  198.3
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 09:12:03",
+                     "timestamp_ms":  1780449123000,
+                     "num_data":  11672,
+                     "main_data":  198.3
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 09:32:10",
+                     "timestamp_ms":  1780450330000,
+                     "num_data":  11689,
+                     "main_data":  198.3
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 09:52:43",
+                     "timestamp_ms":  1780451563000,
+                     "num_data":  11678,
+                     "main_data":  199.88
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 10:13:59",
+                     "timestamp_ms":  1780452839000,
+                     "num_data":  11709,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 10:36:47",
+                     "timestamp_ms":  1780454207000,
+                     "num_data":  11728,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 10:59:02",
+                     "timestamp_ms":  1780455542000,
+                     "num_data":  11728,
+                     "main_data":  198.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 11:21:53",
+                     "timestamp_ms":  1780456913000,
+                     "num_data":  11728,
+                     "main_data":  198.45
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 11:42:31",
+                     "timestamp_ms":  1780458151000,
+                     "num_data":  11726,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 12:04:08",
+                     "timestamp_ms":  1780459448000,
+                     "num_data":  11732,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 12:25:26",
+                     "timestamp_ms":  1780460726000,
+                     "num_data":  11720,
+                     "main_data":  199.99
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 12:47:17",
+                     "timestamp_ms":  1780462037000,
+                     "num_data":  11727,
+                     "main_data":  199.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 13:09:46",
+                     "timestamp_ms":  1780463386000,
+                     "num_data":  11710,
+                     "main_data":  201.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 13:31:21",
+                     "timestamp_ms":  1780464681000,
+                     "num_data":  11710,
+                     "main_data":  201.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 13:51:52",
+                     "timestamp_ms":  1780465912000,
+                     "num_data":  11722,
+                     "main_data":  201.0
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 14:13:42",
+                     "timestamp_ms":  1780467222000,
+                     "num_data":  11720,
+                     "main_data":  201.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 14:35:21",
+                     "timestamp_ms":  1780468521000,
+                     "num_data":  11713,
+                     "main_data":  201.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 14:58:15",
+                     "timestamp_ms":  1780469895000,
+                     "num_data":  11703,
+                     "main_data":  201.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 15:20:58",
+                     "timestamp_ms":  1780471258000,
+                     "num_data":  11748,
+                     "main_data":  201.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 15:46:11",
+                     "timestamp_ms":  1780472771000,
+                     "num_data":  11745,
+                     "main_data":  201.9
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 16:08:42",
+                     "timestamp_ms":  1780474122000,
+                     "num_data":  11752,
+                     "main_data":  201.4
+                 },
+                 {
+                     "beijing_time":  "2026-06-03 16:32:41",
+                     "timestamp_ms":  1780475561000,
+                     "num_data":  11771,
+                     "main_data":  199.5
+                 }
+             ]
+}

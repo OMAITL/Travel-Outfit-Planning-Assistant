@@ -1,0 +1,370 @@
+/* Travel Outfit Planning Assistant — Streamlit overrides */
+
+.block-container {
+  padding-top: 0.75rem;
+  max-width: 1400px;
+}
+
+.layout-shell [data-testid="column"] {
+  align-self: flex-start;
+}
+
+div[data-testid="column"]:has(.input-column) {
+  position: sticky;
+  top: 0.5rem;
+  align-self: flex-start;
+  max-height: calc(100vh - 1rem);
+  overflow: visible;
+  z-index: 2;
+}
+
+div[data-testid="column"]:has(.report-column) {
+  max-height: calc(100vh - 1rem);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.input-column [data-testid="stForm"] {
+  margin-bottom: 0;
+}
+
+.input-column [data-testid="stForm"] [data-testid="stVerticalBlock"] {
+  gap: 0.35rem;
+}
+
+.input-column .stMultiSelect [data-baseweb="tag"] {
+  font-size: 0.78rem;
+}
+
+.app-header {
+  margin-bottom: 0.25rem;
+}
+
+.app-title {
+  font-size: 1.55rem !important;
+  margin-bottom: 0.1rem !important;
+  padding-top: 0 !important;
+}
+
+.app-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 0.5rem 0;
+}
+
+.report-reset-wrap {
+  padding-top: 0.35rem;
+  position: relative;
+  z-index: 10;
+}
+
+.report-reset-wrap button {
+  white-space: nowrap;
+}
+
+.report-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+}
+
+.report-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.disclaimer {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 1.5rem;
+}
+
+div[data-testid="column"] .stImage img {
+  border-radius: 12px;
+}
+
+.stTabs [data-baseweb="tab-list"] {
+  gap: 0.5rem;
+}
+
+/* ── Outfit card ── */
+.color-chip {
+  text-align: center;
+  padding: 0.45rem 0.25rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+.outfit-item {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.outfit-label {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-right: 0.5rem;
+}
+
+/* ── AI look image ── */
+.look-placeholder {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+}
+
+.look-placeholder-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.look-placeholder-sub {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* ── Product section ── */
+.product-section {
+  margin-bottom: 0.75rem;
+}
+
+.product-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.product-section-icon {
+  font-size: 1.25rem;
+}
+
+.product-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.product-section-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+}
+
+.product-api-notice {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.88rem;
+  color: #92400e;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.product-preview-hint {
+  font-size: 0.88rem;
+  color: #64748b;
+  background: #f8fafc;
+  border-left: 3px solid #6366f1;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0 8px 8px 0;
+  margin: 0.5rem 0 1rem;
+}
+
+/* ── Product card (live + placeholder share layout) ── */
+.product-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.65rem;
+  height: 100%;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.product-card--live:hover {
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+.product-card--placeholder {
+  background: linear-gradient(180deg, #fafafa 0%, #f1f5f9 100%);
+  border: 1px dashed #cbd5e1;
+  opacity: 0.92;
+}
+
+.product-card-body {
+  padding: 0.35rem 0.15rem 0.5rem;
+}
+
+.product-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.35;
+  margin: 0.35rem 0 0.25rem;
+  min-height: 2.2em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-title--ghost {
+  color: #94a3b8;
+}
+
+.product-price {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #dc2626;
+  margin: 0.15rem 0;
+  letter-spacing: -0.02em;
+}
+
+.product-price--ghost {
+  color: #cbd5e1;
+}
+
+.product-meta {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 0.2rem 0 0;
+}
+
+.budget-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0.1rem 0 0.2rem;
+}
+
+.budget-good {
+  color: #16a34a;
+}
+
+.budget-warn {
+  color: #ca8a04;
+}
+
+.budget-over {
+  color: #dc2626;
+}
+
+.budget-neutral {
+  color: #94a3b8;
+}
+
+.product-image-slot {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%);
+  background-size: 200% 200%;
+  animation: product-shimmer 2.2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-image-slot-icon {
+  font-size: 1.75rem;
+  opacity: 0.45;
+}
+
+.product-buy-placeholder {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 0.45rem 0.5rem;
+}
+
+@keyframes product-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Live card: tighten Streamlit link button spacing */
+.product-card--live + div[data-testid="stLinkButton"],
+.product-card--live ~ div[data-testid="stLinkButton"] {
+  margin-top: 0.25rem;
+}
+
+/* Mobile: product columns stack more comfortably */
+@media (max-width: 768px) {
+  .product-card {
+    margin-bottom: 0.75rem;
+  }
+}
+
+.outfit-item--compact {
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.35rem;
+}
+
+.item-product-group {
+  margin: 0.75rem 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.item-product-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.92rem;
+}
+
+.look-image-wrap [data-testid="stImage"] img {
+  max-height: 200px;
+  object-fit: contain;
+  width: 100%;
+}
+
+.look-image-wrap--tab [data-testid="stImage"] img {
+  max-height: 360px;
+}
+
+.compact-report [data-testid="stVerticalBlock"] {
+  gap: 0.35rem;
+}
+
+.compact-report .stTabs [data-baseweb="tab-panel"] {
+  padding-top: 0.5rem;
+}
+
+.compact-report .stExpander {
+  margin-bottom: 0.25rem;
+}
+
+.look-placeholder {
+  padding: 1.25rem 0.75rem;
+}
