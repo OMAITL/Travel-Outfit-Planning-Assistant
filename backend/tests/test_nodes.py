@@ -38,6 +38,21 @@ def _mock_llm(return_value):
     return llm
 
 
+def test_trip_extraction_coerces_null_avoid_items() -> None:
+    model = TripExtraction.model_validate(
+        {
+            "is_complete": True,
+            "destination": "大理",
+            "start_date": "2026-06-05",
+            "end_date": "2026-06-07",
+            "avoid_items": None,
+            "activities": None,
+        }
+    )
+    assert model.avoid_items == []
+    assert model.activities == []
+
+
 def test_weather_node_writes_forecast() -> None:
     state = PlanningState(
         trip=TripContext(
@@ -74,7 +89,7 @@ def test_shopping_node_picks_products() -> None:
             "num_iid": "1",
         }
     ]
-    with patch("src.graph.nodes.shopping.search_taobao_items", return_value=mock_items):
+    with patch("src.graph.nodes.shopping.search_products", return_value=mock_items):
         result = shopping_node(state)
 
     assert len(result.products) >= 1
@@ -103,6 +118,27 @@ def test_image_node_skips_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None
     assert any("SKIP_IMAGE_GENERATION" in event.message for event in result.trace)
 
 
+def test_stylist_output_wraps_bare_outfit_list() -> None:
+    from datetime import date
+
+    model = StylistOutput.model_validate(
+        [
+            {
+                "date": "2026-06-05",
+                "outfit_summary": "上装：白T | 下装：牛仔裤",
+                "search_keywords": ["白T恤女"],
+            }
+        ]
+    )
+    assert len(model.outfits) == 1
+    assert model.outfits[0].date == date(2026, 6, 5)
+
+
+def test_stylist_output_coerces_null_payload() -> None:
+    assert StylistOutput.model_validate(None).outfits == []
+    assert StylistOutput.model_validate({"outfits": None}).outfits == []
+
+
 def test_stylist_node_writes_outfits() -> None:
     state = _load_fixture_state()
     outfits = [
@@ -117,6 +153,21 @@ def test_stylist_node_writes_outfits() -> None:
 
     assert len(result.outfits) == 1
     assert result.outfits[0].outfit_summary.startswith("防晒")
+
+
+def test_trip_node_skips_llm_when_trip_ready() -> None:
+    trip = TripContext(
+        destination="大理",
+        start_date=date(2026, 6, 5),
+        end_date=date(2026, 6, 7),
+        is_complete=True,
+    ).mark_complete()
+    state = PlanningState(trip=trip, phase=PlanningPhase.PLANNING)
+    result = trip_node(state, llm=MagicMock())
+    assert result.trip is not None
+    assert result.trip.destination == "大理"
+    assert result.phase == PlanningPhase.PLANNING
+    assert any(event.agent == "Trip" for event in result.trace)
 
 
 def test_trip_node_complete_trip() -> None:

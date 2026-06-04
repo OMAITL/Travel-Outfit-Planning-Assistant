@@ -1,0 +1,40 @@
+{
+  "default": [
+    {
+      "title": "【演示】女夏季轻薄防晒衬衫 休闲百搭",
+      "pic_url": "https://img.alicdn.com/imgextra/i1/O1CN01demo1.jpg",
+      "price": 59.9,
+      "promotion_price": 59.9,
+      "num_iid": "100000000001",
+      "detail_url": "https://item.taobao.com/item.htm?id=100000000001"
+    },
+    {
+      "title": "【演示】女亚麻阔腿裤 夏季透气",
+      "pic_url": "https://img.alicdn.com/imgextra/i2/O1CN01demo2.jpg",
+      "price": 89.0,
+      "promotion_price": 89.0,
+      "num_iid": "100000000002",
+      "detail_url": "https://item.taobao.com/item.htm?id=100000000002"
+    },
+    {
+      "title": "【演示】白色运动鞋 女 透气",
+      "pic_url": "https://img.alicdn.com/imgextra/i3/O1CN01demo3.jpg",
+      "price": 128.0,
+      "promotion_price": 128.0,
+      "num_iid": "100000000003",
+      "detail_url": "https://item.taobao.com/item.htm?id=100000000003"
+    }
+  ],
+  "pools": {
+    "大理": [
+      {
+        "title": "【演示·大理】民族风防晒披肩",
+        "pic_url": "https://img.alicdn.com/imgextra/i4/O1CN01demo4.jpg",
+        "price": 45.0,
+        "promotion_price": 45.0,
+        "num_iid": "100000000004",
+        "detail_url": "https://item.taobao.com/item.htm?id=100000000004"
+      }
+    ]
+  }
+}

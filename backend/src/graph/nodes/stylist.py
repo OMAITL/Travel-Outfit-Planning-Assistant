@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from src.graph.state import DailyOutfit, PlanningState
 from src.services.llm import get_chat_model, invoke_structured, load_prompt
@@ -13,6 +14,18 @@ from src.services.llm import get_chat_model, invoke_structured, load_prompt
 
 class StylistOutput(BaseModel):
     outfits: list[DailyOutfit] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_llm_payload(cls, value: object) -> object:
+        """DeepSeek json_mode may return null, a bare array, or outfits: null."""
+        if value is None:
+            return {"outfits": []}
+        if isinstance(value, list):
+            return {"outfits": value}
+        if isinstance(value, dict) and value.get("outfits") is None:
+            return {**value, "outfits": []}
+        return value
 
 
 def _format_weather(state: PlanningState) -> str:
@@ -24,6 +37,16 @@ def _format_weather(state: PlanningState) -> str:
         rows.append(
             f"- {day.date}: {condition}, {day.temp_min:.0f}~{day.temp_max:.0f}°C"
         )
+    return "\n".join(rows)
+
+
+def _format_itinerary(state: PlanningState) -> str:
+    if not state.itinerary:
+        return "No scenic spots assigned; plan outfits for general sightseeing."
+    rows = []
+    for row in state.itinerary:
+        spots = "、".join(row.spot_names) if row.spot_names else "（未指定景点，按城市通用游览）"
+        rows.append(f"- {row.date}: {spots}")
     return "\n".join(rows)
 
 
@@ -47,8 +70,13 @@ def _format_trip(state: PlanningState) -> str:
             "body_type": prefs.body_type,
             "skin_tone": prefs.skin_tone,
             "avoid_items": prefs.avoid_items,
+            "spot_names": prefs.spot_names,
+            "plan_mode": prefs.plan_mode,
             "budget_per_item": prefs.budget_per_item,
             "budget_total": prefs.budget_total,
+            "budget_by_category": (
+                prefs.budget_by_category.model_dump() if prefs.budget_by_category else None
+            ),
         },
         ensure_ascii=False,
     )
@@ -62,18 +90,44 @@ def stylist_node(state: PlanningState, *, llm=None) -> PlanningState:
     model = llm or get_chat_model()
     user_content = (
         f"Trip:\n{_format_trip(state)}\n\n"
+        f"Daily itinerary (spots per day):\n{_format_itinerary(state)}\n\n"
         f"Weather:\n{_format_weather(state)}\n\n"
-        "Produce one outfit for each day from start_date to end_date."
+        "Produce one outfit for each day from start_date to end_date. "
+        "Tailor recommendation_reason to the spots scheduled that day."
     )
 
-    result: StylistOutput = invoke_structured(
-        model,
-        StylistOutput,
-        [
-            SystemMessage(content=load_prompt("stylist.md")),
-            HumanMessage(content=user_content),
-        ],
+    messages = [
+        SystemMessage(content=load_prompt("stylist.md")),
+        HumanMessage(content=user_content),
+    ]
+    stylist_retry_hint = (
+        "Your previous reply was null or invalid. "
+        'Return ONLY JSON: {"outfits": [{"date": "YYYY-MM-DD", "outfit_summary": "...", '
+        '"recommendation_reason": "...", "search_keywords": ["..."]}]} '
+        "with one outfit object for each trip day."
     )
+
+    try:
+        result: StylistOutput = invoke_structured(
+            model,
+            StylistOutput,
+            messages,
+            retries=1,
+            retry_hint=stylist_retry_hint,
+        )
+        if not result.outfits:
+            result = invoke_structured(
+                model,
+                StylistOutput,
+                [*messages, HumanMessage(content=stylist_retry_hint)],
+            )
+    except OutputParserException as exc:
+        msg = f"穿搭规划解析失败：{exc}"
+        return state.append_error(msg).append_trace("Stylist", msg, level="error")
+
+    if not result.outfits:
+        msg = "穿搭规划失败：模型未返回有效穿搭方案，请稍后重试"
+        return state.append_error(msg).append_trace("Stylist", msg, level="error")
 
     outfits = sorted(result.outfits, key=lambda item: item.date)
     state = state.append_trace("Stylist", f"planned {len(outfits)} outfit(s)")

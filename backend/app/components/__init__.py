@@ -8,8 +8,10 @@ from app.components.product_card_item import (
 )
 from app.components.product_grid import render_product_grid
 from app.components.progress import render_progress_steps
+from app.components.products_magazine import render_products_magazine
 from app.components.trip_form import render_trip_form
 from app.components.weather_panel import render_daily_weather_block, render_weather_overview
+from app.components.tryon import render_tryon_workspace
 
 __all__ = [
     "render_chat_input",
@@ -21,7 +23,9 @@ __all__ = [
     "render_product_card_placeholder",
     "render_product_grid",
     "render_progress_steps",
+    "render_products_magazine",
     "render_trip_form",
+    "render_tryon_workspace",
     "render_daily_weather_block",
     "render_weather_overview",
 ]

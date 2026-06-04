@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>旅行穿搭规划助手 · 原型 v1 — 杂志单页风</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf7f2;
+      --surface: #ffffff;
+      --ink: #1c1917;
+      --muted: #78716c;
+      --accent: #e85d4c;
+      --accent-soft: #fde8e4;
+      --sky: #0ea5e9;
+      --sage: #6b9080;
+      --sand: #e7e0d5;
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(28, 25, 23, 0.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .proto-badge {
+      position: fixed; top: 8px; right: 8px; z-index: 99;
+      background: var(--ink); color: #fff; font-size: 10px;
+      padding: 4px 10px; border-radius: 999px; opacity: 0.85;
+    }
+    /* Compact header */
+    .hero {
+      background: linear-gradient(135deg, #fff8f5 0%, #f5efe6 100%);
+      border-bottom: 1px solid var(--sand);
+      padding: 10px 32px 8px;
+    }
+    .hero-inner {
+      max-width: 1280px; margin: 0 auto;
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    }
+    .hero h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+    .hero p { color: var(--muted); font-size: 0.75rem; }
+    .shell { max-width: 1280px; margin: 0 auto; padding: 16px 32px 40px; display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+    @media (max-width: 960px) { .shell { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 18px; border: 1px solid rgba(0,0,0,0.04);
+    }
+    .shell > .panel { overflow: visible; }
+    .panel h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; }
+    .form-tabs { display: flex; gap: 4px; margin-bottom: 14px; background: var(--bg); padding: 3px; border-radius: 10px; }
+    .form-tabs button {
+      flex: 1; border: none; background: transparent; padding: 7px; border-radius: 8px;
+      font-size: 0.82rem; cursor: pointer; color: var(--muted); font-family: inherit;
+    }
+    .form-tabs button.active { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); margin: 10px 0 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select {
+      width: 100%; padding: 9px 11px; border: 1px solid var(--sand); border-radius: 10px;
+      font-size: 0.9rem; font-family: inherit; background: var(--bg);
+    }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* City select */
+    .city-select-wrap { position: relative; }
+    .city-select-wrap select { cursor: pointer; font-weight: 600; }
+    .spots-section { margin-top: 4px; position: relative; z-index: 1; }
+    .spots-section.dropdown-open { z-index: 40; }
+    .spots-hint { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+    .spot-chips-selected {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 0;
+    }
+    .spot-chips-selected:empty { display: none; }
+    .spot-chip {
+      display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
+      padding: 4px 8px 4px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 500;
+      background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(232, 93, 76, 0.25);
+    }
+    .spot-chip .chip-x {
+      border: none; background: none; padding: 0; cursor: pointer; font-size: 0.85rem;
+      line-height: 1; color: inherit; opacity: 0.65;
+    }
+    .spot-chip .chip-x:hover { opacity: 1; }
+    .multiselect { position: relative; }
+    .multiselect-trigger {
+      width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+      padding: 8px 11px; border: 1px dashed var(--sand); border-radius: 10px;
+      background: var(--surface); font-size: 0.8rem; cursor: pointer; font-family: inherit;
+      text-align: left; color: var(--muted);
+    }
+    .multiselect-trigger:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .multiselect-chevron { font-size: 0.7rem; flex-shrink: 0; transition: transform 0.2s; }
+    .multiselect.open .multiselect-chevron { transform: rotate(180deg); }
+    .multiselect-panel {
+      position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 50;
+      background: var(--surface); border: 1px solid var(--sand); border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(28, 25, 23, 0.12);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(-4px); transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+    }
+    .multiselect.open .multiselect-panel {
+      opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0);
+    }
+    .multiselect-search-wrap {
+      display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+      border-bottom: 1px solid var(--sand); background: var(--bg);
+      border-radius: 12px 12px 0 0;
+    }
+    .multiselect-search-wrap .search-ico { font-size: 0.85rem; opacity: 0.45; flex-shrink: 0; }
+    .multiselect-search {
+      flex: 1; min-width: 0; border: none; padding: 0; font-size: 0.82rem;
+      font-family: inherit; background: transparent; outline: none;
+    }
+    .multiselect-options { max-height: 200px; overflow-y: auto; padding: 4px; }
+    .multiselect-option {
+      display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px;
+      cursor: pointer; font-size: 0.82rem; line-height: 1.35;
+    }
+    .multiselect-option:hover { background: var(--bg); }
+    .multiselect-option:has(input:checked) { background: var(--accent-soft); }
+    .multiselect-option input { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; width: 14px; height: 14px; }
+    .multiselect-option .opt-main { flex: 1; min-width: 0; }
+    .multiselect-option .opt-name { font-weight: 600; font-size: 0.8rem; }
+    .multiselect-option .opt-tag { font-size: 0.67rem; color: var(--muted); margin-top: 2px; }
+    .multiselect-empty { padding: 20px 12px; text-align: center; color: var(--muted); font-size: 0.78rem; }
+    .selected-count { font-size: 0.72rem; color: var(--sage); margin-top: 6px; font-weight: 600; }
+    .plan-mode-tabs {
+      display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 10px; margin-bottom: 10px;
+    }
+    .plan-mode-tabs button {
+      flex: 1; border: none; background: transparent; padding: 8px 4px; border-radius: 8px;
+      font-size: 0.72rem; cursor: pointer; color: var(--muted); font-family: inherit; line-height: 1.25;
+    }
+    .plan-mode-tabs button.active { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .plan-block { margin-top: 4px; }
+    .plan-hint { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; line-height: 1.45; }
+    .plan-hint-compact { margin-bottom: 0; padding: 8px 10px; background: var(--bg); border-radius: 8px; border-left: 3px solid #bae6fd; }
+    .manual-day-nav {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px;
+      scrollbar-width: thin;
+    }
+    .manual-day-nav button {
+      flex: 0 0 auto; min-width: 52px; padding: 7px 10px; border: 1px solid var(--sand); border-radius: 8px;
+      background: var(--surface); font-size: 0.72rem; cursor: pointer; font-family: inherit; color: var(--muted);
+      line-height: 1.2; text-align: center;
+    }
+    .manual-day-nav button .nav-wd { display: block; font-size: 0.62rem; opacity: 0.85; }
+    .manual-day-nav button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+    .manual-day-nav button.has-spots { box-shadow: inset 0 -2px 0 var(--sage); }
+    .manual-day-editor {
+      padding: 10px 12px; background: var(--bg); border-radius: 10px; border: 1px solid var(--sand);
+    }
+    .manual-editor-label { font-size: 0.78rem; font-weight: 700; margin-bottom: 8px; }
+    .manual-day-summary { font-size: 0.68rem; color: var(--sage); margin-top: 6px; font-weight: 600; }
+    .manual-empty { font-size: 0.75rem; color: var(--muted); padding: 12px; text-align: center; background: var(--bg); border-radius: 10px; border: 1px dashed var(--sand); }
+    .auto-badge { font-size: 0.62rem; padding: 2px 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-weight: 600; white-space: nowrap; }
+    .report-mode-note {
+      font-size: 0.72rem; color: var(--muted); margin: -6px 0 10px; padding: 8px 10px;
+      background: var(--bg); border-radius: 8px; border-left: 3px solid var(--sage);
+    }
+    .itinerary-result {
+      background: var(--surface); border: 1px solid var(--sand); border-radius: var(--radius);
+      padding: 14px 16px 12px; margin-bottom: 14px; box-shadow: var(--shadow);
+    }
+    .itinerary-result-head {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;
+    }
+    .itinerary-result-head .title { font-size: 0.88rem; font-weight: 700; }
+    .itinerary-result .weather-strip { margin-bottom: 0; padding-bottom: 2px; }
+    .btn-primary {
+      width: 100%; margin-top: 16px; padding: 12px; border: none; border-radius: 12px;
+      background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .prefs-panel {
+      margin-top: 14px; border: 1px solid var(--sand); border-radius: 12px; background: var(--bg); overflow: hidden;
+    }
+    .prefs-panel summary {
+      padding: 10px 12px; font-size: 0.82rem; font-weight: 600; cursor: pointer; list-style: none;
+      background: linear-gradient(180deg, #f8fafc, var(--bg)); border-bottom: 1px solid var(--sand);
+    }
+    .prefs-panel summary::-webkit-details-marker { display: none; }
+    .prefs-panel[open] summary { color: var(--ink); }
+    .prefs-body { padding: 12px; }
+    .prefs-body label { margin-top: 10px; }
+    .prefs-body label:first-child { margin-top: 0; }
+    .label-help { display: inline-flex; align-items: center; gap: 4px; }
+    .help-ico {
+      width: 14px; height: 14px; border-radius: 50%; background: var(--sand); color: var(--muted);
+      font-size: 0.62rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+    }
+    .multiselect-trigger.placeholder-style .trigger-text { color: var(--muted); font-weight: 400; }
+    /* Report */
+    .report-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .report-head h2 { font-size: 1rem; }
+    .report-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-ghost {
+      padding: 6px 14px; border: 1px solid var(--sand); background: var(--surface);
+      border-radius: 10px; font-size: 0.82rem; cursor: pointer; font-family: inherit;
+    }
+    .btn-ghost.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+    .itinerary-edit-hint {
+      font-size: 0.72rem; color: var(--muted); margin: -6px 0 10px; display: none;
+    }
+    .itinerary-edit-hint.visible { display: block; }
+    .weather-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+    .weather-strip.editing .weather-mini { border-style: dashed; border-color: var(--accent); }
+    .weather-mini {
+      flex: 0 0 auto; min-width: 148px; background: var(--surface); border-radius: 12px;
+      padding: 10px 14px; border: 1px solid var(--sand); cursor: pointer; transition: all 0.2s;
+    }
+    .weather-mini.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); border-style: solid; }
+    .weather-mini .date { font-weight: 700; font-size: 0.9rem; }
+    .weather-mini .wd { font-size: 0.72rem; color: var(--muted); }
+    .weather-mini .temp { font-size: 0.82rem; margin-top: 4px; }
+    .day-spot-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; min-height: 20px; }
+    .spot-chip-sm {
+      font-size: 0.65rem; padding: 2px 7px; background: #f0fdf4; color: var(--sage);
+      border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; font-weight: 500;
+    }
+    .weather-strip.editing .spot-chip-sm { background: var(--accent-soft); color: var(--accent); }
+    .spot-chip-sm .chip-rm {
+      display: none; border: none; background: none; padding: 0; cursor: pointer;
+      font-size: 0.75rem; line-height: 1; color: inherit; opacity: 0.75;
+    }
+    .weather-strip.editing .spot-chip-sm .chip-rm { display: inline; }
+    .day-add-spot {
+      display: none; font-size: 0.62rem; padding: 2px 7px; border: 1px dashed var(--sand);
+      border-radius: 999px; background: var(--surface); cursor: pointer; font-family: inherit; color: var(--muted);
+    }
+    .weather-strip.editing .day-add-spot { display: inline-block; }
+    .day-add-spot:hover { border-color: var(--accent); color: var(--accent); }
+    /* Magazine card */
+    .magazine {
+      background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+      overflow: hidden; border: 1px solid rgba(0,0,0,0.04);
+    }
+    .mag-header { padding: 16px 20px 0; }
+    .mag-header h3 { font-size: 1.2rem; font-weight: 700; }
+    .mag-header .weather-line { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+    /* Content tabs: 概要 / AI / 商品 */
+    .content-tabs {
+      display: flex; gap: 0; border-bottom: 2px solid var(--sand);
+      margin: 14px 20px 0; padding: 0;
+    }
+    .content-tabs button {
+      padding: 10px 18px; border: none; background: none; font-size: 0.88rem;
+      cursor: pointer; color: var(--muted); font-family: inherit; font-weight: 500;
+      position: relative; margin-bottom: -2px;
+    }
+    .content-tabs button.active { color: var(--accent); font-weight: 700; }
+    .content-tabs button.active::after {
+      content: ""; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px; background: var(--accent);
+    }
+    .tab-panel { display: none; padding: 20px; }
+    .tab-panel.active { display: block; }
+    /* Summary tab */
+    .mag-body { display: grid; grid-template-columns: 1fr 1.05fr; gap: 0; min-height: 360px; }
+    @media (max-width: 800px) { .mag-body { grid-template-columns: 1fr; } }
+    .mag-text { padding-right: 20px; border-right: 1px solid var(--sand); }
+    @media (max-width: 800px) { .mag-text { border-right: none; border-bottom: 1px solid var(--sand); padding-right: 0; padding-bottom: 16px; margin-bottom: 16px; } }
+    .mag-text .section { margin-bottom: 16px; }
+    .mag-text .section-title {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px;
+    }
+    .tips-list { list-style: none; font-size: 0.85rem; }
+    .tips-list li { padding: 4px 0 4px 18px; position: relative; }
+    .tips-list li::before { content: "•"; position: absolute; left: 0; color: var(--accent); font-weight: bold; }
+    .reason-box {
+      background: linear-gradient(90deg, var(--accent-soft) 0%, transparent 100%);
+      border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 0 10px 10px 0;
+      font-size: 0.85rem;
+    }
+    .items-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .item-cell { background: var(--bg); border-radius: 10px; padding: 9px 11px; font-size: 0.8rem; }
+    .item-cell .lbl {
+      display: inline-block; background: #e0e7ff; color: #3730a3;
+      font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; margin-bottom: 3px;
+    }
+    .scores { display: flex; gap: 14px; font-size: 0.78rem; color: var(--muted); flex-wrap: wrap; margin-top: 12px; }
+    .mag-visual { background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); padding: 16px; display: flex; flex-direction: column; border-radius: 0 0 12px 0; }
+    .spot-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .spot-pill {
+      padding: 5px 12px; border-radius: 999px; border: 1px solid var(--sand);
+      background: var(--surface); font-size: 0.75rem; cursor: pointer; font-family: inherit;
+    }
+    .spot-pill.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .ai-frame {
+      flex: 1; border-radius: 12px; overflow: hidden; position: relative;
+      background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 40%, #64748b 100%);
+      min-height: 240px; display: flex; align-items: center; justify-content: center;
+    }
+    .ai-frame .placeholder { text-align: center; color: rgba(255,255,255,0.9); padding: 16px; }
+    .ai-frame .placeholder .icon { font-size: 2.5rem; opacity: 0.8; }
+    .ai-frame .scene-label {
+      position: absolute; bottom: 10px; left: 10px; right: 10px;
+      background: rgba(0,0,0,0.55); color: #fff; padding: 6px 10px;
+      border-radius: 8px; font-size: 0.72rem;
+    }
+    /* AI tab full width */
+    .ai-tab-full .ai-frame { min-height: 400px; }
+    /* Products tab */
+    .products-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+    }
+    .products-head h4 { font-size: 0.88rem; font-weight: 600; }
+    .link-tryon {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 999px; border: 1px solid var(--accent);
+      background: var(--accent-soft); color: var(--accent); font-size: 0.82rem;
+      font-weight: 600; cursor: pointer; text-decoration: none; font-family: inherit;
+    }
+    .link-tryon:hover { background: var(--accent); color: #fff; }
+    .cat-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .cat-tab {
+      padding: 7px 16px; border-radius: 999px; border: 1px solid var(--sand);
+      background: var(--surface); cursor: pointer; font-size: 0.8rem; font-family: inherit; color: var(--muted);
+    }
+    .cat-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 700px) { .product-grid { grid-template-columns: 1fr; } }
+    .p-card { border: 1px solid var(--sand); border-radius: 12px; overflow: hidden; background: var(--bg); }
+    .p-card .img {
+      aspect-ratio: 1; background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
+    }
+    .p-card .body { padding: 11px; }
+    .p-card .title { font-size: 0.8rem; font-weight: 600; line-height: 1.35; min-height: 2.4em; }
+    .p-card .price { color: var(--accent); font-weight: 800; font-size: 1.05rem; margin: 5px 0; }
+    .p-card .budget { font-size: 0.72rem; color: var(--sage); }
+    .p-card .cta {
+      display: block; text-align: center; padding: 9px; background: var(--accent);
+      color: #fff; text-decoration: none; font-size: 0.8rem; font-weight: 600;
+    }
+    .footer-note { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 20px; }
+    .hidden { display: none !important; }
+
+    /* ===== AI 试衣视图（同 v1 配色） ===== */
+    #viewTryon { display: none; }
+    #viewTryon.active { display: block; }
+    #viewPlanning.hidden { display: none; }
+    .tryon-back {
+      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+      padding: 6px 12px; border: 1px solid var(--sand); border-radius: 10px;
+      background: var(--surface); font-size: 0.85rem; cursor: pointer; font-family: inherit; color: var(--ink);
+    }
+    .tryon-back:hover { border-color: var(--accent); color: var(--accent); }
+    .tryon-grid {
+      display: grid; grid-template-columns: minmax(280px, 320px) minmax(360px, 420px) 1fr; gap: 18px;
+    }
+    @media (max-width: 1000px) { .tryon-grid { grid-template-columns: 1fr; } }
+    .tryon-panel { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--sand); padding: 16px; box-shadow: var(--shadow); }
+    .tryon-panel-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .source-mode {
+      display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 10px; margin-bottom: 12px;
+    }
+    .source-mode button {
+      flex: 1; border: none; background: transparent; padding: 8px 6px; border-radius: 8px;
+      font-size: 0.75rem; cursor: pointer; font-family: inherit; color: var(--muted); line-height: 1.25;
+    }
+    .source-mode button.active { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .dim-block { background: var(--bg); border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--sand); }
+    .dim-block .dim-note { font-size: 0.68rem; color: var(--sage); margin-top: 8px; line-height: 1.4; }
+    .dim-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .dim-field label { display: block; font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .dim-field input, .dim-field select {
+      width: 100%; padding: 7px 9px; border: 1px solid var(--sand); border-radius: 8px;
+      font-size: 0.82rem; font-family: inherit; background: var(--surface);
+    }
+    .tryon-panel.tryon-size-col { max-height: calc(100vh - 100px); overflow-y: auto; padding-right: 10px; }
+    .size-stack-hint { font-size: 0.68rem; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .dim-details { margin-top: 8px; border: 1px solid var(--sand); border-radius: 10px; background: var(--surface); overflow: hidden; }
+    .dim-details summary { padding: 8px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; list-style: none; }
+    .dim-details summary::-webkit-details-marker { display: none; }
+    .dim-details-body { padding: 0 10px 10px; }
+    .dim-details-body .dim-row { margin-top: 0; }
+    .dim-details-body .dim-row + .dim-row { margin-top: 8px; }
+    .spot-block { margin-top: 0; }
+    .day-chips { display: flex; gap: 8px; margin-bottom: 12px; }
+    .day-chips button {
+      flex: 1; min-width: 0; padding: 10px 6px; border: 1px solid var(--sand); border-radius: 10px;
+      background: var(--surface); color: var(--muted); font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: border-color 0.15s, background 0.15s;
+    }
+    .day-chips button.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+    .spot-list { display: flex; flex-direction: column; gap: 8px; }
+    .spot-card {
+      display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+      border: 1px solid var(--sand); border-radius: 10px; background: var(--surface);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .spot-card:hover { border-color: #d6d0c8; }
+    .spot-card:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+    .spot-card input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+    .spot-ico { font-size: 1.15rem; flex-shrink: 0; line-height: 1; }
+    .spot-name { font-size: 0.82rem; font-weight: 500; line-height: 1.3; flex: 1; min-width: 0; }
+    .privacy-tip {
+      font-size: 0.68rem; color: var(--muted); background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.4;
+    }
+    .upload-zone {
+      border: 2px dashed var(--sand); border-radius: 12px; padding: 16px; text-align: center;
+      cursor: pointer; background: var(--bg); transition: border-color 0.2s;
+    }
+    .upload-zone:hover { border-color: var(--accent); }
+    .upload-zone .icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .upload-zone p { font-size: 0.78rem; color: var(--muted); }
+    .model-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+    .model-opt {
+      aspect-ratio: 3/4; background: var(--bg); border-radius: 10px; border: 2px solid var(--sand);
+      cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+    }
+    .model-opt.active { border-color: var(--accent); background: var(--accent-soft); }
+    .sel-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .sel-item {
+      background: var(--bg); border: 1px solid var(--sand); border-radius: 10px;
+      padding: 6px 10px; font-size: 0.75rem; display: flex; align-items: center; gap: 6px;
+    }
+    .sel-item.empty { border-style: dashed; color: var(--muted); }
+    .preview-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+    }
+    .preview-head h3 { font-size: 0.95rem; font-weight: 700; }
+    .btn-source {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border: 1px solid var(--sand); border-radius: 999px;
+      background: var(--bg); font-size: 0.78rem; cursor: pointer; font-family: inherit; color: var(--ink);
+    }
+    .btn-source:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-source .mini-av { font-size: 1.1rem; line-height: 1; }
+    .source-popover {
+      display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 5;
+      background: var(--surface); border: 1px solid var(--sand); border-radius: 12px;
+      padding: 14px; box-shadow: var(--shadow); text-align: center; min-width: 140px;
+    }
+    .source-popover.open { display: block; }
+    .source-popover .avatar { font-size: 3rem; }
+    .source-popover p { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+    .source-wrap { position: relative; }
+    .ai-preview-main {
+      background: var(--bg); border: 1px solid var(--sand); border-radius: var(--radius);
+      overflow: hidden; min-height: 420px;
+    }
+    .ai-preview-main .lbl {
+      padding: 10px 14px; font-size: 0.75rem; color: var(--muted);
+      border-bottom: 1px solid var(--sand); display: flex; justify-content: space-between; align-items: center;
+    }
+    .ai-preview-main .canvas {
+      min-height: 380px; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 24px;
+      background: linear-gradient(180deg, #fff 0%, var(--bg) 50%, #f1f5f9 100%);
+    }
+    .ai-preview-main .canvas .avatar { font-size: 5rem; }
+    .ai-preview-main .canvas .hint { font-size: 0.85rem; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+    .tryon-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .tryon-actions .btn-primary { margin-top: 0; min-width: 200px; }
+    .btn-secondary {
+      flex: 1; padding: 12px; border: 1px solid var(--sand); border-radius: 12px;
+      background: var(--surface); font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem;
+    }
+    #viewTryon .pool-scroll { max-height: calc(100vh - 240px); overflow-y: auto; }
+    .pool-item {
+      display: flex; gap: 8px; padding: 9px; border-radius: 10px; margin-bottom: 6px;
+      background: var(--bg); border: 1px solid var(--sand); cursor: pointer;
+    }
+    .pool-item.in-tryon { border-color: var(--accent); background: var(--accent-soft); }
+    .pool-item .thumb {
+      width: 44px; height: 44px; background: var(--surface); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+    }
+    .pool-item .info { flex: 1; min-width: 0; }
+    .pool-item .cat { font-size: 0.65rem; color: var(--accent); font-weight: 700; }
+    .pool-item .name { font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pool-item .price { font-size: 0.8rem; color: var(--accent); font-weight: 700; }
+    .pool-item .add {
+      align-self: center; padding: 4px 9px; border: none; border-radius: 6px;
+      background: var(--accent); color: #fff; font-size: 0.68rem; font-weight: 600; cursor: pointer; flex-shrink: 0;
+    }
+    .pool-item.in-tryon .add { background: var(--sand); color: var(--muted); }
+    .progress-bar { height: 3px; background: var(--sand); border-radius: 2px; overflow: hidden; margin-top: 8px; max-width: 400px; }
+    .progress-bar .fill { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+  </style>
+</head>
+<body>
+  <span class="proto-badge">原型 v1 · 已修订</span>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>🧳 旅行穿搭规划助手</h1>
+      <p>AI 旅游穿搭与淘宝导购 · 按景点定制出片造型</p>
+    </div>
+  </header>
+
+  <!-- ===== 行程规划视图 ===== -->
+  <div id="viewPlanning">
+    <div class="shell">
+      <aside class="panel">
+        <h2>行程输入</h2>
+        <div class="form-tabs">
+          <button class="active" type="button">📋 快速填写</button>
+          <button type="button">💬 自由对话</button>
+        </div>
+
+        <label>目的地（城市）</label>
+        <div class="city-select-wrap">
+          <select id="citySelect">
+            <option value="">请选择城市…</option>
+            <option value="dali" selected>大理</option>
+            <option value="lijiang">丽江</option>
+            <option value="chengdu">成都</option>
+            <option value="sanya">三亚</option>
+            <option value="tokyo">东京</option>
+          </select>
+        </div>
+
+        <div class="spots-section" id="spotsSection">
+          <label style="margin-top:12px">选择景点</label>
+          <div class="spots-hint" id="spotsHint">已选「大理」· 可多选 · 影响 AI 背景</div>
+          <div class="spot-chips-selected" id="spotChipsSelected"></div>
+          <div class="multiselect" id="spotMultiselect">
+            <button type="button" class="multiselect-trigger" id="spotTrigger">
+              <span>+ 选择 / 管理景点</span>
+              <span class="multiselect-chevron">▾</span>
+            </button>
+            <div class="multiselect-panel" id="spotPanel">
+              <div class="multiselect-search-wrap">
+                <span class="search-ico">🔍</span>
+                <input type="search" class="multiselect-search" id="spotSearch" placeholder="搜索景点…" />
+              </div>
+              <div class="multiselect-options" id="spotOptions"></div>
+            </div>
+          </div>
+          <div class="selected-count" id="selectedCount">已选 2 个景点</div>
+        </div>
+
+        <div class="row2" style="margin-top:10px">
+          <div><label>出发</label><input type="date" id="tripStart" value="2026-06-05" /></div>
+          <div><label>返回</label><input type="date" id="tripEnd" value="2026-06-07" /></div>
+        </div>
+
+        <label style="margin-top:12px">行程安排</label>
+        <div class="plan-mode-tabs" id="planModeTabs">
+          <button type="button" data-mode="manual">✋ 我自己安排</button>
+          <button type="button" class="active" data-mode="auto">✨ 系统智能分配</button>
+        </div>
+
+        <div id="blockManualPlan" class="plan-block hidden">
+          <p class="plan-hint">先选日期，再为<strong>当前这一天</strong>指定景点（14 天行程也只需编辑一块区域）</p>
+          <div class="manual-day-nav" id="manualDayNav"></div>
+          <div class="manual-day-editor" id="manualDayEditor">
+            <div class="manual-editor-label" id="manualEditorLabel">6/5 周五</div>
+            <div class="multiselect" id="manualSpotMultiselect">
+              <button type="button" class="multiselect-trigger placeholder-style" id="manualSpotTrigger">
+                <span class="trigger-text" id="manualSpotTriggerText">选择当天景点…</span>
+                <span class="multiselect-chevron">▾</span>
+              </button>
+              <div class="multiselect-panel" id="manualSpotPanel">
+                <div class="multiselect-options" id="manualSpotOptions"></div>
+              </div>
+            </div>
+            <div class="manual-day-summary" id="manualDaySummary"></div>
+          </div>
+        </div>
+
+        <div id="blockAutoPlan" class="plan-block">
+          <p class="plan-hint plan-hint-compact">系统将根据所选景点自动排期，结果在右侧「行程报告」展示</p>
+        </div>
+
+        <label>风格标签</label>
+        <input type="text" value="休闲" />
+        <div class="row2">
+          <div><label>单件预算</label><input type="number" value="200" /></div>
+          <div><label>整套预算</label><input type="number" value="800" /></div>
+        </div>
+
+        <details class="prefs-panel" open>
+          <summary>体型与穿搭偏好</summary>
+          <div class="prefs-body">
+            <div class="row2">
+              <div><label>身高 (cm)</label><input type="number" id="prefHeight" value="165" min="100" max="220" /></div>
+              <div><label>体重 (kg)</label><input type="number" id="prefWeight" value="55" min="30" max="150" /></div>
+            </div>
+            <div class="row2">
+              <div>
+                <label>体型</label>
+                <select id="prefBody">
+                  <option selected>不限</option>
+                  <option>偏瘦</option>
+                  <option>标准</option>
+                  <option>微胖</option>
+                  <option>健壮</option>
+                </select>
+              </div>
+              <div>
+                <label>肤色</label>
+                <select id="prefSkin">
+                  <option selected>不限</option>
+                  <option>偏白</option>
+                  <option>自然</option>
+                  <option>小麦色</option>
+                  <option>偏深</option>
+                </select>
+              </div>
+            </div>
+            <label class="label-help">穿搭避雷 <span class="help-ico" title="不希望推荐的单品或风格">?</span></label>
+            <div class="multiselect" id="avoidMultiselect">
+              <button type="button" class="multiselect-trigger placeholder-style" id="avoidTrigger">
+                <span class="trigger-text" id="avoidTriggerText">Choose options</span>
+                <span class="multiselect-chevron">▾</span>
+              </button>
+              <div class="multiselect-panel" id="avoidPanel">
+                <div class="multiselect-options" id="avoidOptions"></div>
+              </div>
+            </div>
+            <label>其他避雷项</label>
+            <input type="text" id="prefAvoidOther" placeholder="例如：不穿露背、不要戴帽子（多个用顿号或逗号分隔）" />
+          </div>
+        </details>
+
+        <button class="btn-primary" type="button">开始规划穿搭</button>
+      </aside>
+
+      <main>
+        <div class="report-head">
+          <h2>行程报告</h2>
+          <div class="report-actions">
+            <button class="btn-ghost" type="button" id="btnRegenPlan">↻ 重新智能分配</button>
+            <button class="btn-ghost" type="button" id="btnEditItinerary">✏️ 编辑行程</button>
+            <button class="btn-ghost" type="button">重新规划</button>
+          </div>
+        </div>
+        <p class="itinerary-edit-hint" id="editHint">编辑模式：点击各日卡片上的 × 删除景点，或点 + 添加</p>
+        <p class="report-mode-note" id="reportModeNote">✨ 系统已分配行程 · 下方卡片为排期结果，可「编辑行程」微调</p>
+
+        <div class="itinerary-result" id="itineraryResult">
+          <div class="itinerary-result-head">
+            <span class="title">行程分配</span>
+            <span class="auto-badge" id="resultBadge">AI 推荐</span>
+          </div>
+          <div class="weather-strip" id="dayNav"></div>
+        </div>
+
+        <article class="magazine">
+          <div class="mag-header">
+            <h3 id="dayTitle">6月5日 · 周五</h3>
+            <div class="weather-line" id="dayWeather">🌧 雨 16–27°C · 降水 60%</div>
+          </div>
+
+          <div class="content-tabs" id="contentTabs">
+            <button class="active" data-tab="summary" type="button">概要</button>
+            <!-- <button data-tab="ai" type="button">AI 效果图</button> -->
+            <button data-tab="products" type="button">推荐商品</button>
+          </div>
+
+          <!-- 概要 -->
+          <div class="tab-panel active" id="panel-summary">
+            <div class="mag-body">
+              <div class="mag-text">
+                <div class="section">
+                  <div class="section-title">旅行提醒</div>
+                  <ul class="tips-list" id="tipsList">
+                    <li>昼夜温差大，建议洋葱式叠穿，方便中午脱外套</li>
+                    <li>可能降雨，备轻便雨衣或防水外套</li>
+                  </ul>
+                </div>
+                <div class="section">
+                  <div class="section-title">推荐理由</div>
+                  <div class="reason-box" id="reasonText">洱海骑行需要防风防泼水的薄外套，内搭白色 T 恤 + 牛仔裤经典耐看；卡其色系与湖光山色呼应，拍照出片。</div>
+                </div>
+                <div class="section">
+                  <div class="section-title">单品清单</div>
+                  <div class="items-grid">
+                    <div class="item-cell"><span class="lbl">上装</span><br/>白色棉质短袖 T 恤 + 浅卡其防水风衣</div>
+                    <div class="item-cell"><span class="lbl">下装</span><br/>蓝色直筒牛仔裤</div>
+                    <div class="item-cell"><span class="lbl">鞋</span><br/>白色帆布鞋（防泼水）</div>
+                    <div class="item-cell"><span class="lbl">配饰</span><br/>卡其棒球帽 · 米色斜挎包</div>
+                  </div>
+                </div>
+                <div class="scores">
+                  <span>风格 ★★★★☆</span><span>舒适 ★★★★★</span><span>出片 ★★★★☆</span><span>配色 白·卡其·蓝</span>
+                </div>
+              </div>
+              <div class="mag-visual">
+                <div class="spot-pills" id="spotPillsSummary">
+                  <button class="spot-pill active" type="button" data-scene="洱海廊道">洱海廊道</button>
+                  <button class="spot-pill" type="button" data-scene="大理古城">大理古城</button>
+                </div>
+                <div class="ai-frame">
+                  <div class="placeholder">
+                    <div class="icon">📸</div>
+                    <p>今日穿搭预览</p>
+                    <p style="font-size:0.78rem;opacity:0.85" class="scene-sub">背景：洱海生态廊道</p>
+                  </div>
+                  <div class="scene-label" id="sceneLabelSummary">AI 生成 · 女 · 休闲风 · 洱海生态廊道</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI 效果图 -->
+          <div class="tab-panel ai-tab-full" id="panel-ai">
+            <div class="spot-pills" id="spotPillsAi">
+              <button class="spot-pill active" type="button" data-scene="洱海廊道">洱海廊道</button>
+              <button class="spot-pill" type="button" data-scene="大理古城">大理古城</button>
+            </div>
+            <div class="ai-frame" style="min-height:400px">
+              <div class="placeholder">
+                <div class="icon">📸</div>
+                <p><strong>AI 穿搭效果图</strong></p>
+                <p style="font-size:0.82rem;opacity:0.85;margin-top:8px" class="scene-sub">背景：洱海生态廊道 · 休闲风</p>
+              </div>
+              <div class="scene-label" id="sceneLabelAi">AI 生成 · 女 · 休闲风 · 洱海生态廊道 · 真人示意仅供参考</div>
+            </div>
+          </div>
+
+          <!-- 推荐商品 -->
+          <div class="tab-panel" id="panel-products">
+            <div class="products-head">
+              <h4>🛍 推荐商品 — 与穿搭一一对应</h4>
+              <button class="link-tryon" type="button" id="btnGoTryon">✨ AI 试衣</button>
+            </div>
+            <div class="cat-tabs" id="catTabs">
+              <button class="cat-tab active" data-cat="top" type="button">上装</button>
+              <button class="cat-tab" data-cat="bottom" type="button">下装</button>
+              <button class="cat-tab" data-cat="shoes" type="button">鞋</button>
+              <button class="cat-tab" data-cat="acc" type="button">配饰</button>
+            </div>
+            <div class="product-grid" id="productGrid"></div>
+          </div>
+        </article>
+
+        <p class="footer-note">穿搭与商品推荐仅供参考；AI 搭配图为示意；价格与库存以淘宝页面为准。</p>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== AI 试衣视图（v1 配色） ===== -->
+  <div id="viewTryon">
+    <div class="shell" style="grid-template-columns:1fr">
+      <button class="tryon-back" type="button" id="btnBackPlan">← 返回行程报告</button>
+      <div style="margin-bottom:14px">
+        <h2 style="font-size:1.1rem;font-weight:700">✨ AI 试衣</h2>
+        <p style="font-size:0.82rem;color:var(--muted);margin-top:2px">用推荐商品虚拟试穿 · 景点背景联动 · 大理 6/5–6/7</p>
+      </div>
+      <div class="tryon-grid">
+        <aside class="tryon-panel tryon-size-col">
+          <div class="tryon-panel-title">① 试穿人物</div>
+          <div class="source-mode" id="sourceMode">
+            <button class="active" type="button" data-mode="virtual">🧍 虚拟模特<br/><span style="font-weight:400;font-size:0.65rem">无需真人照</span></button>
+            <button type="button" data-mode="photo">📷 上传照片<br/><span style="font-weight:400;font-size:0.65rem">真人试穿</span></button>
+          </div>
+
+          <div id="blockVirtual">
+            <div class="tryon-panel-title" style="margin-top:4px">模特形象</div>
+            <div class="model-pick" style="margin-bottom:8px">
+              <div class="model-opt active" data-av="👩">👩</div>
+              <div class="model-opt" data-av="👨">👨</div>
+              <div class="model-opt" data-av="🧑">🧑</div>
+            </div>
+            <p class="dim-note">🔒 无需上传真人照片，使用虚拟模特试穿</p>
+          </div>
+          <div id="blockPhoto" class="hidden">
+            <div class="upload-zone" style="margin-bottom:8px"><div class="icon">📷</div><p>点击上传全身照</p></div>
+            <p class="privacy-tip">照片仅用于本次试穿；可切回虚拟模特</p>
+          </div>
+
+          <div class="tryon-panel-title" style="margin-top:12px">② 身材数据</div>
+          <div class="dim-block">
+            <p class="size-stack-hint">填写量体数据，提高 AI 试穿精度（均可选）</p>
+            <div class="dim-row">
+              <div class="dim-field"><label>身高 (cm)</label><input id="bodyHeight" type="number" value="169" /></div>
+              <div class="dim-field"><label>体重 (kg)</label><input id="bodyWeight" type="number" value="63" /></div>
+            </div>
+            <details class="dim-details">
+              <summary>上身尺码</summary>
+              <div class="dim-details-body">
+                <div class="dim-row">
+                  <div class="dim-field"><label>肩宽 (cm)</label><input type="number" value="39" step="0.5" /></div>
+                  <div class="dim-field"><label>臂长 (cm)</label><input type="number" placeholder="—" step="0.5" /></div>
+                </div>
+                <div class="dim-row">
+                  <div class="dim-field"><label>臂围 (cm)</label><input type="number" placeholder="—" step="0.5" /></div>
+                  <div class="dim-field"><label>上胸围 (cm)</label><input type="number" value="90" step="0.5" /></div>
+                </div>
+                <div class="dim-row">
+                  <div class="dim-field"><label>底围 (cm)</label><input type="number" value="75" step="0.5" /></div>
+                  <div class="dim-field"><label>内衣码</label><input id="bodyBra" value="75C" /></div>
+                </div>
+              </div>
+            </details>
+            <details class="dim-details">
+              <summary>下身尺码</summary>
+              <div class="dim-details-body">
+                <div class="dim-row">
+                  <div class="dim-field"><label>腰围 (cm)</label><input type="number" value="72" step="0.5" /></div>
+                  <div class="dim-field"><label>臀围 (cm)</label><input type="number" value="96" step="0.5" /></div>
+                </div>
+                <div class="dim-row">
+                  <div class="dim-field"><label>腿长 (cm)</label><input type="number" placeholder="—" step="0.5" /></div>
+                  <div class="dim-field"><label>大腿围 (cm)</label><input type="number" value="58" step="0.5" /></div>
+                </div>
+              </div>
+            </details>
+            <details class="dim-details">
+              <summary>脚部尺码</summary>
+              <div class="dim-details-body">
+                <div class="dim-row">
+                  <div class="dim-field"><label>脚长 (cm)</label><input type="number" value="25.0" step="0.1" /></div>
+                  <div class="dim-field"><label>脚宽 (cm)</label><input type="number" value="9.8" step="0.1" /></div>
+                </div>
+                <div class="dim-row">
+                  <div class="dim-field"><label>鞋码</label><input id="footShoe" value="38" /></div>
+                  <div class="dim-field"></div>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div class="tryon-panel-title" style="margin-top:12px">③ 日期与景点背景</div>
+          <div class="dim-block spot-block">
+            <p class="size-stack-hint">选择试穿日期与 AI 合成背景景点</p>
+            <div class="day-chips" id="tryonDayChips">
+              <button class="active" type="button">6/5</button>
+              <button type="button">6/6</button>
+              <button type="button">6/7</button>
+            </div>
+            <div class="spot-list">
+              <label class="spot-card"><input type="radio" name="tryonSpot" checked /><span class="spot-ico">🌊</span><span class="spot-name">洱海生态廊道</span></label>
+              <label class="spot-card"><input type="radio" name="tryonSpot" /><span class="spot-ico">🏯</span><span class="spot-name">大理古城</span></label>
+              <label class="spot-card"><input type="radio" name="tryonSpot" /><span class="spot-ico">🗼</span><span class="spot-name">崇圣寺三塔</span></label>
+            </div>
+          </div>
+        </aside>
+
+        <aside class="tryon-panel tryon-pool-col">
+          <div class="tryon-panel-title">④ 推荐商品池</div>
+          <button class="btn-secondary" type="button" style="width:100%;margin-bottom:10px;font-size:0.78rem;padding:9px">↻ 从今日推荐一键填充</button>
+          <div class="cat-tabs" style="margin-bottom:10px" id="poolCats">
+            <button class="cat-tab active" data-pool="all" type="button">全部</button>
+            <button class="cat-tab" data-pool="top" type="button">上装</button>
+            <button class="cat-tab" data-pool="bottom" type="button">下装</button>
+            <button class="cat-tab" data-pool="shoes" type="button">鞋</button>
+            <button class="cat-tab" data-pool="acc" type="button">配饰</button>
+          </div>
+          <div class="pool-scroll" id="poolList"></div>
+        </aside>
+
+        <main class="tryon-panel tryon-preview-col">
+          <div class="preview-head">
+            <h3>⑤ AI 换装预览</h3>
+            <div class="source-wrap">
+              <button class="btn-source" type="button" id="btnViewSource">
+                <span class="mini-av" id="tryonAvatarMini">👩</span> <span id="btnSourceLabel">查看虚拟模特</span>
+              </button>
+              <div class="source-popover" id="sourcePopover">
+                <div class="avatar" id="tryonAvatar">👩</div>
+                <p id="sourcePopoverHint">虚拟模特 · 169cm · 63kg</p>
+              </div>
+            </div>
+          </div>
+          <div class="sel-bar">
+            <div class="sel-item"><span>👕</span> 白 T + 风衣</div>
+            <div class="sel-item"><span>👖</span> 直筒牛仔裤</div>
+            <div class="sel-item"><span>👟</span> 帆布鞋</div>
+            <div class="sel-item empty">+ 配饰（可选）</div>
+          </div>
+          <div class="ai-preview-main">
+            <div class="lbl"><span>AI 换装结果</span><span id="tryonStatus">待生成</span></div>
+            <div class="canvas" id="tryonResult">
+              <div id="tryonPending">
+                <div class="avatar" style="opacity:0.35">👗</div>
+                <div class="hint">中间选商品后点击「开始 AI 换装」<br/>背景将合成所选景点</div>
+              </div>
+              <div id="tryonDone" class="hidden">
+                <div class="avatar">🧥</div>
+                <div class="hint" style="color:var(--accent)">换装完成 · 洱海廊道背景</div>
+              </div>
+            </div>
+          </div>
+          <div class="tryon-actions">
+            <button class="btn-primary" type="button" id="btnTryonGen">开始 AI 换装</button>
+          </div>
+          <div class="progress-bar hidden" id="tryonProgress"><div class="fill" id="tryonFill"></div></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ── 城市 → 景点数据 ── */
+    const CITY_SPOTS = {
+      dali: {
+        name: "大理",
+        spots: [
+          { id: "erhai", emoji: "🌊", name: "洱海生态廊道", tag: "拍照 · 骑行" },
+          { id: "gucheng", emoji: "🏯", name: "大理古城", tag: "逛街 · 人文" },
+          { id: "santa", emoji: "🗼", name: "崇圣寺三塔", tag: "观光 · 出片" },
+          { id: "cangshan", emoji: "⛰️", name: "苍山索道", tag: "徒步 · 温差大" },
+          { id: "shuanglang", emoji: "🏘️", name: "双廊古镇", tag: "海景 · 慢生活" },
+          { id: "xizhou", emoji: "🌾", name: "喜洲古镇", tag: "麦浪 · 拍照" },
+          { id: "zhoucheng", emoji: "🏺", name: "周城扎染", tag: "非遗 · 体验" },
+          { id: "shaxi", emoji: "🛤️", name: "沙溪古镇", tag: "古道 · 慢游" },
+          { id: "nuodeng", emoji: "🧂", name: "诺邓古村", tag: "火腿 · 人文" },
+          { id: "butterfly", emoji: "🦋", name: "蝴蝶泉", tag: "泉水 · 传说" },
+          { id: "jizushan", emoji: "🛕", name: "鸡足山", tag: "朝圣 · 登山" },
+        ],
+        defaultSelected: ["erhai", "gucheng"],
+      },
+      lijiang: {
+        name: "丽江",
+        spots: [
+          { id: "gucheng_lj", emoji: "🏯", name: "丽江古城", tag: "逛街 · 夜景" },
+          { id: "yulong", emoji: "🏔️", name: "玉龙雪山", tag: "雪山 · 防寒" },
+          { id: "lashi", emoji: "🌅", name: "拉市海", tag: "骑马 · 湿地" },
+          { id: "shigu", emoji: "🌊", name: "石鼓镇", tag: "长江第一湾" },
+        ],
+        defaultSelected: ["gucheng_lj", "yulong"],
+      },
+      chengdu: {
+        name: "成都",
+        spots: [
+          { id: "kuanzhai", emoji: "🏮", name: "宽窄巷子", tag: "逛街 · 美食" },
+          { id: "panda", emoji: "🐼", name: "大熊猫基地", tag: "亲子 · 户外" },
+          { id: "jinli", emoji: "🏯", name: "锦里古街", tag: "夜景 · 人文" },
+          { id: "qingcheng", emoji: "⛰️", name: "青城山", tag: "徒步 · 道教" },
+        ],
+        defaultSelected: ["kuanzhai", "panda"],
+      },
+      sanya: {
+        name: "三亚",
+        spots: [
+          { id: "yalong", emoji: "🏖️", name: "亚龙湾", tag: "海滩 · 度假" },
+          { id: "tianya", emoji: "🌅", name: "天涯海角", tag: "打卡 · 海景" },
+          { id: "wuzhizhou", emoji: "🤿", name: "蜈支洲岛", tag: "潜水 · 防晒" },
+        ],
+        defaultSelected: ["yalong", "tianya"],
+      },
+      tokyo: {
+        name: "东京",
+        spots: [
+          { id: "shibuya", emoji: "🚶", name: "涩谷十字路口", tag: "街拍 · 都市" },
+          { id: "sensoji", emoji: "⛩️", name: "浅草寺", tag: "人文 · 和服" },
+          { id: "skytree", emoji: "🗼", name: "东京晴空塔", tag: "观光 · 夜景" },
+        ],
+        defaultSelected: ["shibuya", "sensoji"],
+      },
+    };
+
+    let selectedSpotIds = new Set(CITY_SPOTS.dali.defaultSelected);
+    let currentCityKey = "dali";
+    let itineraryEditing = false;
+    let planMode = "auto";
+    let manualActiveDay = 0;
+
+    let days = [
+      { date: "6/5", wd: "周五", title: "6月5日 · 周五", weather: "🌧 雨 16–27°C · 降水 60%", temp: "🌧 16–27°C", reason: "洱海骑行需要防风防泼水的薄外套，内搭白色 T 恤 + 牛仔裤经典耐看；卡其色系与湖光山色呼应，拍照出片。", spotIds: ["erhai", "gucheng"], sceneSpots: ["洱海廊道", "大理古城"] },
+      { date: "6/6", wd: "周六", title: "6月6日 · 周六", weather: "☀ 晴 18–28°C · 降水 10%", temp: "☀ 18–28°C", reason: "三塔观光以轻便透气为主，亚麻衬衫 + 阔腿裤舒适又上镜；人民路逛街备一双软底鞋。", spotIds: ["santa", "gucheng"], sceneSpots: ["崇圣寺三塔", "人民路"] },
+      { date: "6/7", wd: "周日", title: "6月7日 · 周日", weather: "⛅ 多云 17–26°C · 降水 20%", temp: "⛅ 17–26°C", reason: "返程日选易打理的速干材质，一件可收纳的风衣应对早晚温差。", spotIds: ["erhai"], sceneSpots: ["洱海廊道"] },
+    ];
+    let activeDay = 0;
+    const WD = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+    const AVOID_OPTS = [
+      { id: "no_crop", label: "不露腰 / 短款上装" },
+      { id: "no_shorts", label: "不穿短裤" },
+      { id: "no_skirt", label: "不穿裙装" },
+      { id: "no_hat", label: "不要帽子" },
+      { id: "no_heel", label: "不要高跟鞋" },
+      { id: "no_tight", label: "避免紧身" },
+      { id: "no_dark", label: "不要深色" },
+      { id: "no_pattern", label: "不要大面积印花" },
+    ];
+    let selectedAvoid = new Set();
+    const sceneLabels = { "洱海廊道": "洱海生态廊道", "大理古城": "大理古城", "崇圣寺三塔": "崇圣寺三塔", "人民路": "人民路步行街" };
+
+    function getSpotById(id) {
+      for (const city of Object.values(CITY_SPOTS)) {
+        const s = city.spots.find(x => x.id === id);
+        if (s) return s;
+      }
+      return null;
+    }
+
+    function getSpotName(id) {
+      return getSpotById(id)?.name || id;
+    }
+
+    function shortSpotLabel(name) {
+      return name.replace("洱海生态廊道", "洱海").replace("大理古城", "古城")
+        .replace("崇圣寺三塔", "三塔").replace("人民路步行街", "人民路");
+    }
+
+    function renderSelectedChips() {
+      const city = CITY_SPOTS[currentCityKey];
+      const wrap = document.getElementById("spotChipsSelected");
+      if (!city || !wrap) return;
+      const selected = city.spots.filter(s => selectedSpotIds.has(s.id));
+      wrap.innerHTML = selected.map(s => `
+        <span class="spot-chip" data-id="${s.id}">
+          ${s.emoji} ${s.name}
+          <button type="button" class="chip-x" aria-label="移除">×</button>
+        </span>
+      `).join("");
+      wrap.querySelectorAll(".chip-x").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const id = btn.closest(".spot-chip").dataset.id;
+          selectedSpotIds.delete(id);
+          updateSelectedCount();
+          renderSpotOptions();
+        });
+      });
+    }
+
+    function updateSelectedCount() {
+      const n = selectedSpotIds.size;
+      document.getElementById("selectedCount").textContent = n ? `已选 ${n} 个景点` : "请至少选择 1 个景点";
+      renderSelectedChips();
+      if (planMode === "manual") renderManualDays();
+    }
+
+    function autoAssignDays() {
+      const city = CITY_SPOTS[currentCityKey];
+      if (!city) return;
+      const ids = city.spots.filter(s => selectedSpotIds.has(s.id)).map(s => s.id);
+      days.forEach(d => { d.spotIds = []; });
+      if (!ids.length) {
+        syncAllFromDays();
+        return;
+      }
+      ids.forEach((id, i) => days[i % days.length].spotIds.push(id));
+      syncAllFromDays();
+    }
+
+    function syncAllFromDays() {
+      days.forEach((_, i) => syncDaySceneSpots(i));
+      renderDayNav();
+      renderManualDays();
+      selectDay(activeDay);
+    }
+
+    function rebuildDaysFromDates() {
+      const startVal = document.getElementById("tripStart")?.value;
+      const endVal = document.getElementById("tripEnd")?.value;
+      if (!startVal || !endVal) return;
+      const start = new Date(startVal + "T12:00:00");
+      const end = new Date(endVal + "T12:00:00");
+      if (end < start) return;
+      const prev = days;
+      const next = [];
+      let i = 0;
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const m = d.getMonth() + 1;
+        const dayNum = d.getDate();
+        const wd = WD[d.getDay()];
+        const old = prev[i];
+        next.push({
+          date: `${m}/${dayNum}`,
+          wd,
+          title: `${m}月${dayNum}日 · ${wd}`,
+          weather: old?.weather || "⛅ 多云 18–26°C · 降水 20%",
+          temp: old?.temp || "⛅ 18–26°C",
+          reason: old?.reason || "根据当日天气与景点活动，建议舒适分层穿搭。",
+          spotIds: old?.spotIds ? [...old.spotIds] : [],
+          sceneSpots: old?.sceneSpots ? [...old.sceneSpots] : [],
+        });
+        i++;
+      }
+      days = next;
+      if (activeDay >= days.length) activeDay = Math.max(0, days.length - 1);
+      if (manualActiveDay >= days.length) manualActiveDay = Math.max(0, days.length - 1);
+      if (planMode === "auto") autoAssignDays();
+      else syncAllFromDays();
+    }
+
+    function renderManualDayNav() {
+      const nav = document.getElementById("manualDayNav");
+      if (!nav) return;
+      nav.innerHTML = days.map((d, i) => `
+        <button type="button" class="${i === manualActiveDay ? "active" : ""}${d.spotIds.length ? " has-spots" : ""}" data-idx="${i}">
+          ${d.date}<span class="nav-wd">${d.wd}</span>
+        </button>
+      `).join("");
+      nav.querySelectorAll("button").forEach(btn => {
+        btn.onclick = () => { manualActiveDay = +btn.dataset.idx; renderManualDays(); };
+      });
+    }
+
+    function updateManualDaySummary() {
+      const d = days[manualActiveDay];
+      const el = document.getElementById("manualDaySummary");
+      if (!el || !d) return;
+      const names = d.spotIds.map(id => shortSpotLabel(getSpotById(id)?.name || id));
+      el.textContent = names.length ? `当天已选：${names.join("、")}` : "当天尚未指定景点";
+    }
+
+    function updateManualSpotTrigger() {
+      const d = days[manualActiveDay];
+      const el = document.getElementById("manualSpotTriggerText");
+      const trigger = document.getElementById("manualSpotTrigger");
+      if (!el || !d || !trigger) return;
+      if (!d.spotIds.length) {
+        el.textContent = "选择当天景点…";
+        trigger.classList.add("placeholder-style");
+      } else {
+        el.textContent = `已选 ${d.spotIds.length} 个景点`;
+        trigger.classList.remove("placeholder-style");
+      }
+    }
+
+    function renderManualDayEditor() {
+      const city = CITY_SPOTS[currentCityKey];
+      const d = days[manualActiveDay];
+      const label = document.getElementById("manualEditorLabel");
+      const opts = document.getElementById("manualSpotOptions");
+      if (!city || !d || !opts) return;
+      if (label) label.textContent = `${d.date} ${d.wd}`;
+      const pool = city.spots.filter(s => selectedSpotIds.has(s.id));
+      if (!pool.length) {
+        opts.innerHTML = `<div class="manual-empty">请先在上方选择景点</div>`;
+        updateManualDaySummary();
+        return;
+      }
+      opts.innerHTML = pool.map(s => `
+        <label class="multiselect-option">
+          <input type="checkbox" value="${s.id}"${d.spotIds.includes(s.id) ? " checked" : ""} />
+          <span class="opt-main"><span class="opt-name">${s.emoji} ${s.name}</span><div class="opt-tag">${s.tag}</div></span>
+        </label>
+      `).join("");
+      opts.querySelectorAll("input[type=checkbox]").forEach(cb => {
+        cb.onchange = () => {
+          const id = cb.value;
+          if (cb.checked && !d.spotIds.includes(id)) d.spotIds.push(id);
+          if (!cb.checked) d.spotIds = d.spotIds.filter(x => x !== id);
+          syncDaySceneSpots(manualActiveDay);
+          updateManualDaySummary();
+          updateManualSpotTrigger();
+          renderManualDayNav();
+          renderDayNav();
+          if (manualActiveDay === activeDay) updateDaySpots(d.sceneSpots);
+        };
+      });
+      updateManualDaySummary();
+      updateManualSpotTrigger();
+    }
+
+    function renderManualDays() {
+      renderManualDayNav();
+      renderManualDayEditor();
+    }
+
+    function updateAvoidTrigger() {
+      const el = document.getElementById("avoidTriggerText");
+      const trigger = document.getElementById("avoidTrigger");
+      const labels = AVOID_OPTS.filter(o => selectedAvoid.has(o.id)).map(o => o.label);
+      if (!el || !trigger) return;
+      if (!labels.length) {
+        el.textContent = "Choose options";
+        trigger.classList.add("placeholder-style");
+      } else if (labels.length <= 2) {
+        el.textContent = labels.join("、");
+        trigger.classList.remove("placeholder-style");
+      } else {
+        el.textContent = `${labels.slice(0, 2).join("、")} 等 ${labels.length} 项`;
+        trigger.classList.remove("placeholder-style");
+      }
+    }
+
+    function renderAvoidOptions() {
+      const opts = document.getElementById("avoidOptions");
+      if (!opts) return;
+      opts.innerHTML = AVOID_OPTS.map(o => `
+        <label class="multiselect-option">
+          <input type="checkbox" value="${o.id}"${selectedAvoid.has(o.id) ? " checked" : ""} />
+          <span class="opt-main"><span class="opt-name">${o.label}</span></span>
+        </label>
+      `).join("");
+      opts.querySelectorAll("input[type=checkbox]").forEach(cb => {
+        cb.onchange = () => {
+          if (cb.checked) selectedAvoid.add(cb.value);
+          else selectedAvoid.delete(cb.value);
+          updateAvoidTrigger();
+        };
+      });
+    }
+
+    function setupMultiselectDropdown(msId, triggerId, panelId, onOpen) {
+      const ms = document.getElementById(msId);
+      const trigger = document.getElementById(triggerId);
+      const panel = document.getElementById(panelId);
+      if (!ms || !trigger || !panel) return;
+      trigger.onclick = e => {
+        e.stopPropagation();
+        document.querySelectorAll(".multiselect.open").forEach(x => { if (x !== ms) x.classList.remove("open"); });
+        ms.classList.toggle("open");
+        if (ms.classList.contains("open") && onOpen) onOpen();
+      };
+      panel.onclick = e => e.stopPropagation();
+    }
+
+    document.addEventListener("click", () => {
+      document.querySelectorAll(".multiselect.open").forEach(x => x.classList.remove("open"));
+      document.getElementById("spotsSection")?.classList.remove("dropdown-open");
+    });
+
+    setupMultiselectDropdown("manualSpotMultiselect", "manualSpotTrigger", "manualSpotPanel", renderManualDayEditor);
+    setupMultiselectDropdown("avoidMultiselect", "avoidTrigger", "avoidPanel");
+    renderAvoidOptions();
+    updateAvoidTrigger();
+
+    document.getElementById("tripStart")?.addEventListener("change", rebuildDaysFromDates);
+    document.getElementById("tripEnd")?.addEventListener("change", rebuildDaysFromDates);
+
+    function setPlanMode(mode) {
+      planMode = mode;
+      document.querySelectorAll("#planModeTabs button").forEach(b => {
+        b.classList.toggle("active", b.dataset.mode === mode);
+      });
+      document.getElementById("blockManualPlan").classList.toggle("hidden", mode !== "manual");
+      document.getElementById("blockAutoPlan").classList.toggle("hidden", mode !== "auto");
+      const editBtn = document.getElementById("btnEditItinerary");
+      const regenBtn = document.getElementById("btnRegenPlan");
+      const badge = document.getElementById("resultBadge");
+      const note = document.getElementById("reportModeNote");
+      if (mode === "manual") {
+        if (itineraryEditing) document.getElementById("btnEditItinerary").click();
+        editBtn.style.display = "none";
+        regenBtn.style.display = "none";
+        if (badge) { badge.textContent = "手动安排"; badge.style.background = "#fef3c7"; badge.style.color = "#b45309"; }
+        note.textContent = "✋ 你在左侧指定每日景点 · 下方卡片同步展示你的安排";
+        renderManualDays();
+      } else {
+        editBtn.style.display = "";
+        regenBtn.style.display = "";
+        if (badge) { badge.textContent = "AI 推荐"; badge.style.background = "#e0f2fe"; badge.style.color = "#0369a1"; }
+        note.textContent = "✨ 系统已分配行程 · 下方卡片为排期结果，可「编辑行程」微调";
+        autoAssignDays();
+      }
+      document.getElementById("dayNav").classList.toggle("editing", mode === "auto" && itineraryEditing);
+    }
+
+    document.querySelectorAll("#planModeTabs button").forEach(btn => {
+      btn.addEventListener("click", () => setPlanMode(btn.dataset.mode));
+    });
+    document.getElementById("btnRegenPlan").addEventListener("click", autoAssignDays);
+
+    function renderSpotOptions() {
+      const city = CITY_SPOTS[currentCityKey];
+      const options = document.getElementById("spotOptions");
+      const hint = document.getElementById("spotsHint");
+      if (!city) {
+        options.innerHTML = "";
+        hint.textContent = "请先选择城市";
+        document.getElementById("selectedCount").textContent = "";
+        return;
+      }
+      hint.textContent = `已选「${city.name}」· 下拉多选 · 影响 AI 背景`;
+      const q = (document.getElementById("spotSearch").value || "").trim().toLowerCase();
+      options.innerHTML = city.spots.filter(s =>
+        !q || s.name.toLowerCase().includes(q) || s.tag.toLowerCase().includes(q)
+      ).map(s => `
+        <label class="multiselect-option">
+          <input type="checkbox" value="${s.id}"${selectedSpotIds.has(s.id) ? " checked" : ""} />
+          <span class="opt-main">
+            <span class="opt-name">${s.emoji} ${s.name}</span>
+            <div class="opt-tag">${s.tag}</div>
+          </span>
+        </label>
+      `).join("") || `<div class="multiselect-empty">无匹配景点</div>`;
+      options.querySelectorAll("input[type=checkbox]").forEach(cb => {
+        cb.addEventListener("change", () => {
+          if (cb.checked) selectedSpotIds.add(cb.value);
+          else selectedSpotIds.delete(cb.value);
+          updateSelectedCount();
+        });
+      });
+    }
+
+    function loadCitySpots(cityKey) {
+      currentCityKey = cityKey;
+      const city = CITY_SPOTS[cityKey];
+      if (!city) return;
+      selectedSpotIds = new Set(city.defaultSelected);
+      document.getElementById("spotSearch").value = "";
+      renderSpotOptions();
+      updateSelectedCount();
+    }
+
+    const spotMultiselect = document.getElementById("spotMultiselect");
+    const spotsSection = document.getElementById("spotsSection");
+    function setSpotDropdown(open) {
+      spotMultiselect.classList.toggle("open", open);
+      spotsSection.classList.toggle("dropdown-open", open);
+      if (open) document.getElementById("spotSearch").focus();
+    }
+    document.getElementById("spotTrigger").addEventListener("click", e => {
+      e.stopPropagation();
+      document.querySelectorAll(".multiselect.open").forEach(x => { if (x !== spotMultiselect) x.classList.remove("open"); });
+      setSpotDropdown(!spotMultiselect.classList.contains("open"));
+    });
+    document.getElementById("spotSearch").addEventListener("input", () => renderSpotOptions());
+    document.getElementById("spotPanel").addEventListener("click", e => e.stopPropagation());
+
+    document.getElementById("citySelect").addEventListener("change", e => loadCitySpots(e.target.value));
+    loadCitySpots("dali");
+
+    /* ── 日期切换 & 可编辑行程 ── */
+    function renderDayNav() {
+      const nav = document.getElementById("dayNav");
+      nav.innerHTML = days.map((d, i) => `
+        <div class="weather-mini${i === activeDay ? " active" : ""}" data-day="${i}">
+          <div class="date">${d.date}</div><div class="wd">${d.wd}</div>
+          <div class="temp">${d.temp}</div>
+          <div class="day-spot-row" data-day="${i}">
+            ${d.spotIds.map(id => {
+              const sp = getSpotById(id);
+              return sp ? `<span class="spot-chip-sm" data-id="${id}">${shortSpotLabel(sp.name)}<button type="button" class="chip-rm" aria-label="移除">×</button></span>` : "";
+            }).join("")}
+            <button type="button" class="day-add-spot" data-day="${i}">+ 添加</button>
+          </div>
+        </div>
+      `).join("");
+      nav.querySelectorAll(".weather-mini").forEach(el => {
+        el.addEventListener("click", e => {
+          if (e.target.closest(".chip-rm") || e.target.closest(".day-add-spot")) return;
+          selectDay(+el.dataset.day);
+        });
+      });
+      nav.querySelectorAll(".chip-rm").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          const chip = btn.closest(".spot-chip-sm");
+          const dayIdx = +btn.closest(".day-spot-row").dataset.day;
+          days[dayIdx].spotIds = days[dayIdx].spotIds.filter(id => id !== chip.dataset.id);
+          syncDaySceneSpots(dayIdx);
+          renderDayNav();
+          if (dayIdx === activeDay) updateDaySpots(days[activeDay].sceneSpots);
+        });
+      });
+      nav.querySelectorAll(".day-add-spot").forEach(btn => {
+        btn.addEventListener("click", e => {
+          e.stopPropagation();
+          if (!itineraryEditing || planMode !== "auto") return;
+          const dayIdx = +btn.dataset.day;
+          const city = CITY_SPOTS[currentCityKey];
+          const available = city.spots.filter(s => selectedSpotIds.has(s.id) && !days[dayIdx].spotIds.includes(s.id));
+          if (!available.length) { alert("请先在左侧多选更多景点，或该日已包含全部已选景点"); return; }
+          days[dayIdx].spotIds.push(available[0].id);
+          syncDaySceneSpots(dayIdx);
+          renderDayNav();
+          if (dayIdx === activeDay) updateDaySpots(days[activeDay].sceneSpots);
+        });
+      });
+    }
+
+    function syncDaySceneSpots(dayIdx) {
+      days[dayIdx].sceneSpots = days[dayIdx].spotIds.map(id => {
+        const n = getSpotById(id)?.name || id;
+        if (n.includes("洱海")) return "洱海廊道";
+        if (n.includes("古城")) return "大理古城";
+        if (n.includes("三塔")) return "崇圣寺三塔";
+        return n.slice(0, 6);
+      });
+    }
+
+    function selectDay(idx) {
+      activeDay = idx;
+      renderDayNav();
+      const d = days[idx];
+      document.getElementById("dayTitle").textContent = d.title;
+      document.getElementById("dayWeather").textContent = d.weather;
+      document.getElementById("reasonText").textContent = d.reason;
+      updateDaySpots(d.sceneSpots);
+    }
+
+    document.getElementById("btnEditItinerary").addEventListener("click", () => {
+      if (planMode !== "auto") return;
+      itineraryEditing = !itineraryEditing;
+      document.getElementById("dayNav").classList.toggle("editing", itineraryEditing);
+      document.getElementById("editHint").classList.toggle("visible", itineraryEditing);
+      document.getElementById("btnEditItinerary").classList.toggle("active", itineraryEditing);
+      document.getElementById("btnEditItinerary").textContent = itineraryEditing ? "✓ 完成编辑" : "✏️ 编辑行程";
+    });
+
+    renderDayNav();
+    setPlanMode("auto");
+
+    function bindSpotPills(containerId, labelId) {
+      document.querySelectorAll(`#${containerId} .spot-pill`).forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll(`#${containerId} .spot-pill`).forEach(x => x.classList.remove("active"));
+          btn.classList.add("active");
+          const scene = sceneLabels[btn.dataset.scene] || btn.dataset.scene;
+          const label = document.getElementById(labelId);
+          if (label) label.textContent = `AI 生成 · 女 · 休闲风 · ${scene} · 真人示意仅供参考`;
+          const panel = document.getElementById(containerId).closest(".tab-panel") || document.getElementById(containerId).parentElement;
+          const sub = panel.querySelector(".scene-sub");
+          if (sub) sub.textContent = `背景：${scene} · 休闲风`;
+        };
+      });
+    }
+
+    function updateDaySpots(spots) {
+      ["spotPillsSummary", "spotPillsAi"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = spots.map((s, i) =>
+          `<button class="spot-pill${i === 0 ? " active" : ""}" type="button" data-scene="${s}">${s}</button>`
+        ).join("");
+      });
+      bindSpotPills("spotPillsSummary", "sceneLabelSummary");
+      bindSpotPills("spotPillsAi", "sceneLabelAi");
+    }
+
+    bindSpotPills("spotPillsSummary", "sceneLabelSummary");
+    bindSpotPills("spotPillsAi", "sceneLabelAi");
+
+    /* ── 内容 Tab ── */
+    document.querySelectorAll("#contentTabs button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#contentTabs button").forEach(x => x.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    /* ── 商品品类 Tab ── */
+    const products = {
+      top: [
+        { icon: "👕", title: "女夏季轻薄防晒衬衫 休闲百搭", price: "¥59.90", budget: "占预算 30%" },
+        { icon: "🧥", title: "浅卡其色轻薄防水风衣", price: "¥168", budget: "占预算 84%" },
+        { icon: "👚", title: "白色棉质短袖 T 恤", price: "¥39.90", budget: "占预算 20%" },
+      ],
+      bottom: [{ icon: "👖", title: "高腰蓝色直筒牛仔裤", price: "¥129", budget: "占预算 65%" }],
+      shoes: [{ icon: "👟", title: "白色帆布鞋 防泼水处理", price: "¥89", budget: "占预算 45%" }],
+      acc: [
+        { icon: "🧢", title: "卡其色棒球帽", price: "¥35", budget: "占预算 18%" },
+        { icon: "👜", title: "米色帆布斜挎包", price: "¥79", budget: "占预算 40%" },
+      ],
+    };
+
+    function renderProducts(cat) {
+      document.getElementById("productGrid").innerHTML = (products[cat] || []).map(p => `
+        <div class="p-card">
+          <div class="img">${p.icon}</div>
+          <div class="body"><div class="title">${p.title}</div><div class="price">${p.price}</div><div class="budget">${p.budget}</div></div>
+          <a class="cta" href="#">去淘宝购买</a>
+        </div>
+      `).join("");
+    }
+    renderProducts("top");
+
+    document.querySelectorAll("#catTabs .cat-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#catTabs .cat-tab").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        renderProducts(btn.dataset.cat);
+      });
+    });
+
+    /* ── 视图切换：行程 ↔ AI 试衣 ── */
+    document.getElementById("btnGoTryon").addEventListener("click", () => {
+      document.getElementById("viewPlanning").classList.add("hidden");
+      const tryon = document.getElementById("viewTryon");
+      tryon.style.display = "block";
+      tryon.classList.add("active");
+      window.scrollTo(0, 0);
+    });
+    document.getElementById("btnBackPlan").addEventListener("click", () => {
+      document.getElementById("viewTryon").style.display = "none";
+      document.getElementById("viewTryon").classList.remove("active");
+      document.getElementById("viewPlanning").classList.remove("hidden");
+      window.scrollTo(0, 0);
+    });
+
+    /* ── AI 试衣交互 ── */
+    const CAT_LABEL = { top: "上装", bottom: "下装", shoes: "鞋", acc: "配饰" };
+    let poolFilter = "all";
+
+    const poolData = [
+      { cat: "top", icon: "👕", name: "女夏季轻薄防晒衬衫", price: "¥59.90", in: true },
+      { cat: "top", icon: "🧥", name: "浅卡其防水风衣", price: "¥168", in: true },
+      { cat: "bottom", icon: "👖", name: "蓝色直筒牛仔裤", price: "¥129", in: true },
+      { cat: "shoes", icon: "👟", name: "白色防泼水帆布鞋", price: "¥89", in: true },
+      { cat: "acc", icon: "🧢", name: "卡其色棒球帽", price: "¥35", in: false },
+    ];
+
+    function renderPool() {
+      const list = poolFilter === "all" ? poolData : poolData.filter(p => p.cat === poolFilter);
+      const el = document.getElementById("poolList");
+      el.innerHTML = list.map(p => `
+        <div class="pool-item${p.in ? " in-tryon" : ""}" data-name="${p.name}">
+          <div class="thumb">${p.icon}</div>
+          <div class="info"><div class="cat">${CAT_LABEL[p.cat] || p.cat}</div><div class="name">${p.name}</div><div class="price">${p.price}</div></div>
+          <button class="add" type="button">${p.in ? "已选" : "试穿"}</button>
+        </div>
+      `).join("");
+      el.querySelectorAll(".pool-item").forEach(row => {
+        row.querySelector(".add").addEventListener("click", e => {
+          e.stopPropagation();
+          const p = poolData.find(x => x.name === row.dataset.name);
+          if (p) { p.in = !p.in; renderPool(); }
+        });
+      });
+    }
+    renderPool();
+
+    document.querySelectorAll("#poolCats .cat-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#poolCats .cat-tab").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        poolFilter = btn.dataset.pool;
+        renderPool();
+      });
+    });
+
+    document.querySelectorAll("#tryonDayChips button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#tryonDayChips button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    function updateSourceHint() {
+      const h = document.getElementById("bodyHeight")?.value || "169";
+      const w = document.getElementById("bodyWeight")?.value || "63";
+      const shoe = document.getElementById("footShoe")?.value;
+      const bodyLine = `${h}cm · ${w}kg` + (shoe ? ` · 鞋 ${shoe}` : "");
+      const mode = document.querySelector("#sourceMode button.active")?.dataset.mode || "virtual";
+      const hint = document.getElementById("sourcePopoverHint");
+      const label = document.getElementById("btnSourceLabel");
+      const av = document.querySelector(".model-opt.active")?.dataset.av || "👩";
+      if (mode === "virtual") {
+        if (hint) hint.textContent = "虚拟模特 · " + bodyLine;
+        if (label) label.textContent = "查看虚拟模特";
+        document.getElementById("tryonAvatar").textContent = av;
+        document.getElementById("tryonAvatarMini").textContent = av;
+      } else {
+        if (hint) hint.textContent = "真人试穿 · " + bodyLine;
+        if (label) label.textContent = "查看原图";
+        document.getElementById("tryonAvatar").textContent = "📷";
+        document.getElementById("tryonAvatarMini").textContent = "📷";
+      }
+    }
+
+    document.querySelectorAll("#sourceMode button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#sourceMode button").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        const isVirtual = btn.dataset.mode === "virtual";
+        document.getElementById("blockVirtual").classList.toggle("hidden", !isVirtual);
+        document.getElementById("blockPhoto").classList.toggle("hidden", isVirtual);
+        updateSourceHint();
+      });
+    });
+
+    document.querySelectorAll(".model-opt").forEach(el => {
+      el.addEventListener("click", () => {
+        document.querySelectorAll(".model-opt").forEach(x => x.classList.remove("active"));
+        el.classList.add("active");
+        updateSourceHint();
+      });
+    });
+
+    ["bodyHeight", "bodyWeight", "footShoe"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateSourceHint);
+    });
+    updateSourceHint();
+
+    document.getElementById("btnViewSource").addEventListener("click", e => {
+      e.stopPropagation();
+      document.getElementById("sourcePopover").classList.toggle("open");
+    });
+    document.getElementById("sourcePopover").addEventListener("click", e => e.stopPropagation());
+    document.addEventListener("click", () => {
+      document.getElementById("sourcePopover").classList.remove("open");
+    });
+
+    document.getElementById("btnTryonGen").addEventListener("click", () => {
+      const bar = document.getElementById("tryonProgress");
+      const fill = document.getElementById("tryonFill");
+      bar.classList.remove("hidden");
+      document.getElementById("tryonStatus").textContent = "生成中…";
+      document.getElementById("tryonPending").classList.remove("hidden");
+      document.getElementById("tryonDone").classList.add("hidden");
+      let w = 0;
+      const t = setInterval(() => {
+        w += 10;
+        fill.style.width = w + "%";
+        if (w >= 100) {
+          clearInterval(t);
+          document.getElementById("tryonPending").classList.add("hidden");
+          document.getElementById("tryonDone").classList.remove("hidden");
+          document.getElementById("tryonStatus").textContent = "完成";
+          bar.classList.add("hidden");
+        }
+      }, 100);
+    });
+  </script>
+</body>
+</html>

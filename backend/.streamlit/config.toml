@@ -1,0 +1,4 @@
+# Avoid scanning globally-installed ML packages (e.g. transformers) for hot-reload.
+# Those packages lazy-import torchvision and flood the console with harmless errors.
+[server]
+fileWatcherType = "none"

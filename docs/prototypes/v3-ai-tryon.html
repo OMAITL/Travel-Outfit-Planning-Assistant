@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>旅行穿搭规划助手 · AI 试衣（v1 配色）</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf7f2; --surface: #ffffff; --ink: #1c1917; --muted: #78716c;
+      --accent: #e85d4c; --accent-soft: #fde8e4; --sand: #e7e0d5;
+      --radius: 16px; --shadow: 0 4px 24px rgba(28, 25, 23, 0.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Noto Sans SC", sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; }
+    .proto-badge { position: fixed; top: 8px; right: 8px; z-index: 99; background: var(--ink); color: #fff; font-size: 10px; padding: 4px 10px; border-radius: 999px; }
+    .hero {
+      background: linear-gradient(135deg, #fff8f5 0%, #f5efe6 100%);
+      border-bottom: 1px solid var(--sand); padding: 10px 28px 8px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+    .hero h1 { font-size: 1.1rem; font-weight: 700; }
+    .hero p { font-size: 0.75rem; color: var(--muted); }
+    .tryon-back {
+      padding: 6px 14px; border: 1px solid var(--sand); border-radius: 10px;
+      background: var(--surface); font-size: 0.82rem; text-decoration: none; color: var(--ink);
+    }
+    .tryon-back:hover { border-color: var(--accent); color: var(--accent); }
+    .workspace { max-width: 1280px; margin: 0 auto; padding: 16px 28px 40px; }
+    .workspace-grid { display: grid; grid-template-columns: minmax(280px, 320px) minmax(360px, 420px) 1fr; gap: 18px; }
+    .panel.size-col { max-height: calc(100vh - 100px); overflow-y: auto; }
+    .size-stack-hint { font-size: 0.68rem; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .dim-details { margin-top: 8px; border: 1px solid var(--sand); border-radius: 10px; background: var(--surface); overflow: hidden; }
+    .dim-details summary { padding: 8px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; list-style: none; }
+    .dim-details summary::-webkit-details-marker { display: none; }
+    .dim-details-body { padding: 0 10px 10px; }
+    .dim-details-body .dim-row { margin-top: 0; }
+    .dim-details-body .dim-row + .dim-row { margin-top: 8px; }
+    .spot-block { margin-top: 0; }
+    .day-chips { display: flex; gap: 8px; margin-bottom: 12px; }
+    .day-chips button {
+      flex: 1; min-width: 0; padding: 10px 6px; border: 1px solid var(--sand); border-radius: 10px;
+      background: var(--surface); color: var(--muted); font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: border-color 0.15s, background 0.15s;
+    }
+    .day-chips button.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+    .spot-list { display: flex; flex-direction: column; gap: 8px; }
+    .spot-card {
+      display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+      border: 1px solid var(--sand); border-radius: 10px; background: var(--surface);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .spot-card:hover { border-color: #d6d0c8; }
+    .spot-card:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+    .spot-card input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+    .spot-ico { font-size: 1.15rem; flex-shrink: 0; line-height: 1; }
+    .spot-name { font-size: 0.82rem; font-weight: 500; line-height: 1.3; flex: 1; min-width: 0; }
+    @media (max-width: 1000px) { .workspace-grid { grid-template-columns: 1fr; } }
+    .panel { background: var(--surface); border: 1px solid var(--sand); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .panel-title { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .source-mode { display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 10px; margin-bottom: 12px; }
+    .source-mode button { flex: 1; border: none; background: transparent; padding: 8px 6px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; font-family: inherit; color: var(--muted); line-height: 1.25; }
+    .source-mode button.active { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .dim-block { background: var(--bg); border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--sand); }
+    .dim-block .dim-note { font-size: 0.68rem; color: #6b9080; margin-top: 8px; line-height: 1.4; }
+    .dim-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .dim-field label { display: block; font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .dim-field input, .dim-field select { width: 100%; padding: 7px 9px; border: 1px solid var(--sand); border-radius: 8px; font-size: 0.82rem; font-family: inherit; background: var(--surface); }
+    .privacy-tip { font-size: 0.68rem; color: var(--muted); background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 10px; margin-top: 8px; line-height: 1.4; }
+    .upload-zone { border: 2px dashed var(--sand); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; background: var(--bg); }
+    .upload-zone:hover { border-color: var(--accent); }
+    .model-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+    .model-opt { aspect-ratio: 3/4; background: var(--bg); border-radius: 10px; border: 2px solid var(--sand); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .model-opt.active { border-color: var(--accent); background: var(--accent-soft); }
+    .sel-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .sel-item { background: var(--bg); border: 1px solid var(--sand); border-radius: 10px; padding: 6px 10px; font-size: 0.75rem; }
+    .sel-item.empty { border-style: dashed; color: var(--muted); }
+    .preview-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .preview-head h3 { font-size: 0.95rem; font-weight: 700; }
+    .btn-source { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--sand); border-radius: 999px; background: var(--bg); font-size: 0.78rem; cursor: pointer; font-family: inherit; }
+    .btn-source:hover { border-color: var(--accent); color: var(--accent); }
+    .source-wrap { position: relative; }
+    .source-popover { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; background: var(--surface); border: 1px solid var(--sand); border-radius: 12px; padding: 14px; box-shadow: var(--shadow); text-align: center; min-width: 140px; }
+    .source-popover.open { display: block; }
+    .source-popover .avatar { font-size: 3rem; }
+    .source-popover p { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+    .ai-preview-main { background: var(--bg); border: 1px solid var(--sand); border-radius: var(--radius); overflow: hidden; min-height: 420px; }
+    .ai-preview-main .lbl { padding: 10px 14px; font-size: 0.75rem; color: var(--muted); border-bottom: 1px solid var(--sand); display: flex; justify-content: space-between; }
+    .ai-preview-main .canvas { min-height: 380px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; background: linear-gradient(180deg, #fff 0%, var(--bg) 50%, #f1f5f9 100%); }
+    .ai-preview-main .avatar { font-size: 5rem; }
+    .ai-preview-main .hint { font-size: 0.85rem; color: var(--muted); margin-top: 10px; }
+    .action-row { display: flex; gap: 10px; margin-top: 14px; }
+    .btn-primary { padding: 12px 28px; border: none; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-secondary { flex: 1; padding: 12px; border: 1px solid var(--sand); border-radius: 12px; background: var(--surface); font-weight: 600; cursor: pointer; font-family: inherit; }
+    .cat-tab { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--sand); background: var(--surface); font-size: 0.75rem; cursor: pointer; font-family: inherit; color: var(--muted); margin: 0 4px 6px 0; }
+    .cat-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .pool-scroll { max-height: calc(100vh - 240px); overflow-y: auto; }
+    .pool-item { display: flex; gap: 8px; padding: 9px; border-radius: 10px; margin-bottom: 6px; background: var(--bg); border: 1px solid var(--sand); }
+    .pool-item.in-tryon { border-color: var(--accent); background: var(--accent-soft); }
+    .pool-item .thumb { width: 48px; height: 48px; background: var(--surface); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .pool-item .info { flex: 1; min-width: 0; }
+    .pool-item .cat { font-size: 0.65rem; color: var(--accent); font-weight: 700; }
+    .pool-item .name { font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pool-item .price { font-size: 0.82rem; color: var(--accent); font-weight: 700; }
+    .pool-item .add { align-self: center; padding: 4px 10px; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
+    .pool-item.in-tryon .add { background: var(--sand); color: var(--muted); }
+    .progress-bar { height: 3px; background: var(--sand); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+    .progress-bar .fill { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+    .hidden { display: none !important; }
+    .note { margin-top: 16px; font-size: 0.75rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <span class="proto-badge">v3 · 三栏布局</span>
+  <header class="hero">
+    <div>
+      <h1>✨ AI 试衣</h1>
+      <p>大理 · 6/5–6/7 · 用推荐商品虚拟试穿 · 景点背景联动</p>
+    </div>
+    <a class="tryon-back" href="v1-travel-magazine.html">← 返回行程报告</a>
+  </header>
+
+  <div class="workspace">
+    <div class="workspace-grid">
+      <aside class="panel size-col">
+        <div class="panel-title">① 试穿人物</div>
+        <div class="source-mode" id="sourceMode">
+          <button class="active" type="button" data-mode="virtual">🧍 虚拟模特<br/><span style="font-weight:400;font-size:0.65rem">无需真人照</span></button>
+          <button type="button" data-mode="photo">📷 上传照片<br/><span style="font-weight:400;font-size:0.65rem">真人试穿</span></button>
+        </div>
+        <div id="blockVirtual">
+          <div class="panel-title" style="margin-top:4px">模特形象</div>
+          <div class="model-pick" style="margin-bottom:8px">
+            <div class="model-opt active" data-av="👩">👩</div>
+            <div class="model-opt" data-av="👨">👨</div>
+            <div class="model-opt" data-av="🧑">🧑</div>
+          </div>
+          <p class="dim-note">🔒 无需上传真人照片，使用虚拟模特试穿</p>
+        </div>
+        <div id="blockPhoto" class="hidden">
+          <div class="upload-zone"><div style="font-size:1.8rem">📷</div><p style="font-size:0.78rem;color:var(--muted)">点击上传全身照</p></div>
+          <p class="privacy-tip">照片仅用于本次试穿；可随时切回「虚拟模特」</p>
+        </div>
+        <div class="panel-title" style="margin-top:12px">② 身材数据</div>
+        <div class="dim-block">
+          <p class="size-stack-hint">填写量体数据，提高 AI 试穿精度（均可选）</p>
+          <div class="dim-row">
+            <div class="dim-field"><label>身高 (cm)</label><input id="bodyHeight" type="number" value="169" /></div>
+            <div class="dim-field"><label>体重 (kg)</label><input id="bodyWeight" type="number" value="63" /></div>
+          </div>
+          <details class="dim-details">
+            <summary>上身尺码</summary>
+            <div class="dim-details-body">
+              <div class="dim-row">
+                <div class="dim-field"><label>肩宽 (cm)</label><input type="number" value="39" step="0.5" /></div>
+                <div class="dim-field"><label>臂长 (cm)</label><input type="number" placeholder="—" step="0.5" /></div>
+              </div>
+              <div class="dim-row">
+                <div class="dim-field"><label>臂围 (cm)</label><input type="number" placeholder="—" step="0.5" /></div>
+                <div class="dim-field"><label>上胸围 (cm)</label><input type="number" value="90" step="0.5" /></div>
+              </div>
+              <div class="dim-row">
+                <div class="dim-field"><label>底围 (cm)</label><input type="number" value="75" step="0.5" /></div>
+                <div class="dim-field"><label>内衣码</label><input id="bodyBra" value="75C" /></div>
+              </div>
+            </div>
+          </details>
+          <details class="dim-details">
+            <summary>下身尺码</summary>
+            <div class="dim-details-body">
+              <div class="dim-row">
+                <div class="dim-field"><label>腰围 (cm)</label><input type="number" value="72" step="0.5" /></div>
+                <div class="dim-field"><label>臀围 (cm)</label><input type="number" value="96" step="0.5" /></div>
+              </div>
+              <div class="dim-row">
+                <div class="dim-field"><label>腿长 (cm)</label><input type="number" placeholder="—" step="0.5" /></div>
+                <div class="dim-field"><label>大腿围 (cm)</label><input type="number" value="58" step="0.5" /></div>
+              </div>
+            </div>
+          </details>
+          <details class="dim-details">
+            <summary>脚部尺码</summary>
+            <div class="dim-details-body">
+              <div class="dim-row">
+                <div class="dim-field"><label>脚长 (cm)</label><input type="number" value="25.0" step="0.1" /></div>
+                <div class="dim-field"><label>脚宽 (cm)</label><input type="number" value="9.8" step="0.1" /></div>
+              </div>
+              <div class="dim-row">
+                <div class="dim-field"><label>鞋码</label><input id="footShoe" value="38" /></div>
+                <div class="dim-field"></div>
+              </div>
+            </div>
+          </details>
+        </div>
+        <div class="panel-title" style="margin-top:12px">③ 日期与景点背景</div>
+        <div class="dim-block spot-block">
+          <p class="size-stack-hint">选择试穿日期与 AI 合成背景景点</p>
+          <div class="day-chips" id="dayChips">
+            <button class="active" type="button">6/5</button>
+            <button type="button">6/6</button>
+            <button type="button">6/7</button>
+          </div>
+          <div class="spot-list">
+            <label class="spot-card"><input type="radio" name="s" checked /><span class="spot-ico">🌊</span><span class="spot-name">洱海生态廊道</span></label>
+            <label class="spot-card"><input type="radio" name="s" /><span class="spot-ico">🏯</span><span class="spot-name">大理古城</span></label>
+            <label class="spot-card"><input type="radio" name="s" /><span class="spot-ico">🗼</span><span class="spot-name">崇圣寺三塔</span></label>
+          </div>
+        </div>
+      </aside>
+      <aside class="panel">
+        <div class="panel-title">④ 推荐商品池</div>
+        <button class="btn-secondary" type="button" style="width:100%;margin-bottom:10px;font-size:0.78rem;padding:9px">↻ 一键填充今日推荐</button>
+        <div id="cats"></div>
+        <div class="pool-scroll" id="pool"></div>
+      </aside>
+      <main class="panel">
+        <div class="preview-head">
+          <h3>⑤ AI 换装预览</h3>
+          <div class="source-wrap">
+            <button class="btn-source" type="button" id="btnSrc"><span id="avMini">👩</span> <span id="btnSrcLabel">查看虚拟模特</span></button>
+            <div class="source-popover" id="srcPop"><div class="avatar" id="av">👩</div><p id="srcHint">虚拟模特 · 169cm · 63kg</p></div>
+          </div>
+        </div>
+        <div class="sel-bar">
+          <div class="sel-item">👕 白 T + 风衣</div>
+          <div class="sel-item">👖 牛仔裤</div>
+          <div class="sel-item">👟 帆布鞋</div>
+          <div class="sel-item empty">+ 配饰</div>
+        </div>
+        <div class="ai-preview-main">
+          <div class="lbl"><span>AI 换装结果</span><span id="st">待生成</span></div>
+          <div class="canvas">
+            <div id="pend"><div class="avatar" style="opacity:0.35">👗</div><div class="hint">中间选商品后点击「开始 AI 换装」</div></div>
+            <div id="done" class="hidden"><div class="avatar">🧥</div><div class="hint" style="color:var(--accent)">完成 · 洱海背景</div></div>
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="btn-primary" type="button" id="gen">开始 AI 换装</button>
+        </div>
+        <div class="progress-bar hidden" id="prog"><div class="fill" id="fill"></div></div>
+      </main>
+    </div>
+    <p class="note">② 身材数据 + ③ 日期景点背景；虚拟模特无需真人照。<a href="v1-travel-magazine.html" style="color:var(--accent)">v1 原型</a></p>
+  </div>
+  <script>
+    const CAT = { all:"全部", top:"上装", bottom:"下装", shoes:"鞋", acc:"配饰" };
+    const pool = [
+      { id:1, cat:"top", icon:"👕", name:"防晒衬衫", price:"¥59.90", in:true },
+      { id:2, cat:"top", icon:"🧥", name:"防水风衣", price:"¥168", in:true },
+      { id:3, cat:"bottom", icon:"👖", name:"直筒牛仔裤", price:"¥129", in:true },
+      { id:4, cat:"shoes", icon:"👟", name:"帆布鞋", price:"¥89", in:true },
+      { id:5, cat:"acc", icon:"🧢", name:"棒球帽", price:"¥35", in:false },
+    ];
+    let filt = "all";
+    function renderCats() {
+      document.getElementById("cats").innerHTML = Object.keys(CAT).map(c =>
+        `<button class="cat-tab${filt===c?" active":""}" data-c="${c}" type="button">${CAT[c]}</button>`
+      ).join("");
+      document.querySelectorAll(".cat-tab").forEach(b => b.onclick = () => { filt = b.dataset.c; renderCats(); renderPool(); });
+    }
+    function renderPool() {
+      const list = filt==="all" ? pool : pool.filter(p=>p.cat===filt);
+      document.getElementById("pool").innerHTML = list.map(p => `
+        <div class="pool-item${p.in?" in-tryon":""}">
+          <div class="thumb">${p.icon}</div>
+          <div class="info"><div class="cat">${CAT[p.cat]}</div><div class="name">${p.name}</div><div class="price">${p.price}</div></div>
+          <button class="add" type="button" data-id="${p.id}">${p.in?"已选":"试穿"}</button>
+        </div>`).join("");
+      document.querySelectorAll(".add").forEach(b => b.onclick = () => {
+        pool.find(x=>x.id===+b.dataset.id).in ^= 1; renderPool();
+      });
+    }
+    renderCats(); renderPool();
+    document.querySelectorAll("#dayChips button").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll("#dayChips button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      };
+    });
+    function updateHint() {
+      const h = document.getElementById("bodyHeight")?.value || "169";
+      const w = document.getElementById("bodyWeight")?.value || "63";
+      const shoe = document.getElementById("footShoe")?.value;
+      const bodyLine = `${h}cm · ${w}kg` + (shoe ? ` · 鞋 ${shoe}` : "");
+      const virtual = document.querySelector("#sourceMode button.active")?.dataset.mode === "virtual";
+      const av = document.querySelector(".model-opt.active")?.dataset.av || "👩";
+      document.getElementById("srcHint").textContent = (virtual ? "虚拟模特 · " : "真人试穿 · ") + bodyLine;
+      document.getElementById("btnSrcLabel").textContent = virtual ? "查看虚拟模特" : "查看原图";
+      document.getElementById("av").textContent = virtual ? av : "📷";
+      document.getElementById("avMini").textContent = virtual ? av : "📷";
+    }
+    document.querySelectorAll("#sourceMode button").forEach(btn => btn.onclick = () => {
+      document.querySelectorAll("#sourceMode button").forEach(x => x.classList.remove("active"));
+      btn.classList.add("active");
+      const v = btn.dataset.mode === "virtual";
+      document.getElementById("blockVirtual").classList.toggle("hidden", !v);
+      document.getElementById("blockPhoto").classList.toggle("hidden", v);
+      updateHint();
+    });
+    document.querySelectorAll(".model-opt").forEach(el => el.onclick = () => {
+      document.querySelectorAll(".model-opt").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      updateHint();
+    });
+    ["bodyHeight","bodyWeight","footShoe"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.oninput = updateHint;
+    });
+    updateHint();
+    document.getElementById("btnSrc").onclick = e => { e.stopPropagation(); document.getElementById("srcPop").classList.toggle("open"); };
+    document.getElementById("srcPop").onclick = e => e.stopPropagation();
+    document.addEventListener("click", () => document.getElementById("srcPop").classList.remove("open"));
+    document.getElementById("gen").onclick = () => {
+      const bar = document.getElementById("prog"), fill = document.getElementById("fill");
+      bar.classList.remove("hidden");
+      document.getElementById("st").textContent = "生成中…";
+      document.getElementById("pend").classList.remove("hidden");
+      document.getElementById("done").classList.add("hidden");
+      let w = 0;
+      const t = setInterval(() => {
+        w += 10; fill.style.width = w + "%";
+        if (w >= 100) {
+          clearInterval(t);
+          document.getElementById("pend").classList.add("hidden");
+          document.getElementById("done").classList.remove("hidden");
+          document.getElementById("st").textContent = "完成";
+          bar.classList.add("hidden");
+        }
+      }, 100);
+    };
+  </script>
+</body>
+</html>

@@ -126,7 +126,25 @@ print(state.report)
 Graph: `trip → weather → stylist → assets (image ∥ shopping) → report`.  
 When trip info is incomplete, the graph stops after `trip` until the user replies.
 
-## Phase 5 — Streamlit UI
+## Phase 5 — UI
+
+### Vue + FastAPI（推荐）
+
+```bash
+# 终端 1 — API
+cd backend
+uv sync --extra api
+uv run uvicorn api.main:app --reload --port 8000
+
+# 终端 2 — Vue
+cd frontend
+npm install
+npm run dev
+```
+
+打开 http://localhost:5173 。详见 `frontend/README.md`。
+
+### Streamlit（可选，调试用）
 
 ```bash
 cd backend
@@ -134,6 +152,9 @@ uv run streamlit run app/main.py
 ```
 
 Open the URL shown in the terminal (default `http://localhost:8501`).
+
+**Console spam (`ModuleNotFoundError: No module named 'torchvision'`)**  
+If your global Python has `transformers` installed, Streamlit’s file watcher may scan it on startup and print hundreds of harmless tracebacks. This project does not use `transformers` or `torchvision`. `backend/.streamlit/config.toml` sets `fileWatcherType = "none"` to silence that; after editing code, use **Rerun** in the UI. To re-enable auto-reload, change it to `poll` or `auto` (and optionally `pip install torchvision`).
 
 - **Left panel**: chat with multi-turn trip collection
 - **Right panel**: daily report tabs (weather → outfit → AI image → products)

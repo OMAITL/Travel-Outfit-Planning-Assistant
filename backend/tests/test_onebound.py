@@ -69,6 +69,17 @@ def test_normalize_taobao_item_builds_urls() -> None:
     assert "防晒" in item["title"]
 
 
+def test_search_taobao_items_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ONEBOUND_KEY", "test-key")
+    monkeypatch.setenv("ONEBOUND_SECRET", "test-secret")
+
+    with patch("src.tools.onebound.httpx.get", side_effect=httpx.ReadTimeout("timed out")):
+        with patch("src.tools.onebound.cache_get", return_value=None):
+            with pytest.raises(OneBoundError) as exc_info:
+                search_taobao_items("女装", use_cache=False)
+    assert exc_info.value.error_code == "timeout"
+
+
 def test_search_taobao_items_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ONEBOUND_KEY", "test-key")
     monkeypatch.setenv("ONEBOUND_SECRET", "test-secret")

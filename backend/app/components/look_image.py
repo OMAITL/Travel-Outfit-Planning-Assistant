@@ -1,6 +1,8 @@
-"""AI outfit look image — realistic travel photo display."""
+"""AI outfit look image — v1 ai-frame style."""
 
 from __future__ import annotations
+
+import html
 
 import streamlit as st
 
@@ -21,13 +23,13 @@ def _scene_caption(preferences: TripPreferences | None, destination: str) -> str
         "海边": "海滨栈道",
         "露营": "户外营地",
     }
-    scene = "旅行目的地"
+    scene = destination or "旅行目的地"
     for activity in activities:
         if activity in scene_map:
             scene = scene_map[activity]
             break
 
-    return f"AI 生成 · {gender} · {style}风 · {destination} · {scene} · 真人穿搭示意，仅供参考"
+    return f"AI 生成 · {gender} · {style}风 · {scene} · 真人穿搭示意，仅供参考"
 
 
 def render_look_image(
@@ -37,11 +39,47 @@ def render_look_image(
     preferences: TripPreferences | None = None,
     on_retry: bool = False,
     compact: bool = False,
+    hide_title: bool = False,
+    frame: bool = False,
+    full_height: bool = False,
 ) -> None:
-    if compact:
-        st.markdown("**📸 AI 穿搭效果图**")
-    else:
-        st.markdown("#### 📸 AI 穿搭效果图")
+    if not hide_title:
+        if compact:
+            st.markdown("**📸 AI 穿搭效果图**")
+        else:
+            st.markdown("#### 📸 AI 穿搭效果图")
+
+    caption = html.escape(_scene_caption(preferences, destination))
+    min_h = "400px" if full_height else "240px"
+
+    if frame:
+        if image_url:
+            st.markdown(
+                f"""
+                <div class="ai-frame" style="min-height:{min_h}">
+                  <img src="{html.escape(image_url)}" alt="AI 穿搭效果图" />
+                  <div class="scene-label">{caption}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            return
+        st.markdown(
+            f"""
+            <div class="ai-frame" style="min-height:{min_h}">
+              <div class="placeholder">
+                <div class="icon">📸</div>
+                <p>{"今日穿搭预览" if compact else "AI 穿搭效果图"}</p>
+                <p style="font-size:0.78rem;opacity:0.85">生成中或暂时失败</p>
+              </div>
+              <div class="scene-label">{caption}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if on_retry:
+            st.caption("重新规划可再次尝试生图")
+        return
 
     if image_url:
         st.image(image_url, use_container_width=True)
@@ -50,10 +88,12 @@ def render_look_image(
 
     st.markdown(
         """
-        <div class="look-placeholder">
-          <div class="look-placeholder-icon">🖼️</div>
-          <p>AI 穿搭效果图生成中或暂时失败</p>
-          <p class="look-placeholder-sub">可参考上方文字方案；请确认即梦 / DashScope API 配置</p>
+        <div class="ai-frame">
+          <div class="placeholder">
+            <div class="icon">🖼️</div>
+            <p>AI 穿搭效果图生成中或暂时失败</p>
+            <p style="font-size:0.78rem;opacity:0.85">可参考文字方案；请确认即梦 API 配置</p>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,

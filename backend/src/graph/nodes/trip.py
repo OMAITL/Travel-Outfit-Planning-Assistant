@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.graph.state import ChatMessage, PlanningPhase, PlanningState, TripContext, TripPreferences
 from src.services.llm import get_chat_model, invoke_structured, load_prompt
@@ -29,6 +29,12 @@ class TripExtraction(BaseModel):
     is_complete: bool = False
     follow_up_question: str | None = None
 
+    @field_validator("activities", "avoid_items", mode="before")
+    @classmethod
+    def _coerce_null_lists(cls, value: list[str] | None) -> list[str]:
+        """LLM often returns null instead of [] — must not crash the graph."""
+        return value if value is not None else []
+
 
 def _conversation_text(state: PlanningState) -> str:
     if not state.messages:
@@ -38,6 +44,12 @@ def _conversation_text(state: PlanningState) -> str:
 
 
 def trip_node(state: PlanningState, *, llm=None) -> PlanningState:
+    if state.trip is not None and state.trip.is_complete:
+        return state.model_copy(update={"phase": PlanningPhase.PLANNING}).append_trace(
+            "Trip",
+            f"TripContext ready: {state.trip.destination} ({state.trip.trip_days} days)",
+        )
+
     state = state.append_trace("Trip", "parsing trip information")
     model = llm or get_chat_model()
     system_prompt = load_prompt("trip.md").format(today=date.today().isoformat())
@@ -50,6 +62,7 @@ def trip_node(state: PlanningState, *, llm=None) -> PlanningState:
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_content),
         ],
+        retries=1,
     )
 
     if not extraction.is_complete or not all(

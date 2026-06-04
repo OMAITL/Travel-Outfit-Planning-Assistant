@@ -52,5 +52,19 @@ def test_pick_top_n_returns_product_cards() -> None:
     assert products[0].trip_date == date(2026, 7, 10)
 
 
-def test_to_product_card_skips_invalid_rows() -> None:
+def test_to_product_card_skips_without_link() -> None:
     assert to_product_card({"title": "only title"}) is None
+
+
+def test_to_product_card_marks_over_budget() -> None:
+    card = to_product_card(
+        {
+            "title": "女 防晒 衬衫",
+            "pic_url": "https://img.example/x.jpg",
+            "price": "228",
+            "detail_url": "https://item.taobao.com/item.htm?id=1",
+        },
+        max_price=200,
+    )
+    assert card is not None
+    assert card.within_budget is False

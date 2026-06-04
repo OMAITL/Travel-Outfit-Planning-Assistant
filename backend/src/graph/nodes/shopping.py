@@ -1,4 +1,4 @@
-"""Shopping Agent node — search OneBound and pick top products per day."""
+"""Shopping Agent node — LLM-enriched keywords + budget-aware OneBound search."""
 
 from __future__ import annotations
 
@@ -7,72 +7,97 @@ from typing import Any
 from src.config import get_settings
 from src.graph.state import PlanningState, ProductCard
 from src.services.product_matcher import pick_top_n
-from src.tools.onebound import OneBoundError, search_taobao_items
+from src.services.search_enrichment import ShoppingSearchItem, enrich_search_plans
+from src.tools.product_search import ProductSearchError, search_products
+
+MAX_PER_ITEM = 3
 
 
 def _search_keyword(
     keyword: str,
     budget: float | None,
-) -> tuple[list[dict[str, Any]], OneBoundError | None]:
-    """Search with budget filter; retry without price cap if the first pass is empty."""
+) -> tuple[list[dict[str, Any]], ProductSearchError | None]:
     try:
-        items = search_taobao_items(keyword, max_price=budget)
+        items = search_products(keyword, max_price=budget)
         if not items and budget is not None and budget > 0:
-            items = search_taobao_items(keyword, max_price=None)
+            items = search_products(keyword, max_price=None)
         return items, None
-    except OneBoundError as exc:
+    except ProductSearchError as exc:
         return [], exc
+    except Exception as exc:
+        return [], ProductSearchError(f"商品搜索失败: {exc}", source="unknown")
 
 
-def shopping_node(state: PlanningState) -> PlanningState:
+def _outfit_for_date(state: PlanningState, day):
+    for outfit in state.outfits:
+        if outfit.date == day:
+            return outfit
+    return None
+
+
+def shopping_node(state: PlanningState, *, llm=None) -> PlanningState:
     if not state.outfits:
         return state.append_trace("Shopping", "skipped: no outfits", level="warning")
 
     settings = get_settings()
-    budget = state.trip.preferences.budget_per_item if state.trip else None
+    prefs = state.trip.preferences if state.trip else None
+    if prefs is None:
+        return state.append_trace("Shopping", "skipped: no preferences", level="warning")
+
     all_products: list[ProductCard] = []
     calls_used = 0
-    max_calls = settings.onebound_max_calls_per_run
+    max_calls = (
+        settings.justoneapi_max_calls_per_run
+        if settings.product_source == "justoneapi"
+        else settings.onebound_max_calls_per_run
+    )
     quota_exceeded = False
 
-    state = state.append_trace("Shopping", f"matching products (max {max_calls} API calls)")
+    search_plans = enrich_search_plans(state.outfits, prefs, llm=llm)
+    state = state.append_trace(
+        "Shopping",
+        f"searching {len(search_plans)} item(s), max {MAX_PER_ITEM}/item, {max_calls} API calls",
+    )
 
-    for outfit in state.outfits:
-        if quota_exceeded:
+    for plan in search_plans:
+        if quota_exceeded or calls_used >= max_calls:
             break
 
-        candidates: list[dict[str, Any]] = []
-        keywords = outfit.search_keywords[:2] or [outfit.outfit_summary[:30]]
+        outfit = _outfit_for_date(state, plan.date)
+        if outfit is None:
+            continue
 
-        for keyword in keywords:
-            if calls_used >= max_calls:
-                state = state.append_trace(
-                    "Shopping",
-                    f"call limit reached ({max_calls}); skipping remaining searches",
-                    level="warning",
-                )
-                break
+        budget = plan.max_price if plan.max_price > 0 else None
+        items, api_error = _search_keyword(plan.keyword, budget)
+        calls_used += 1
 
-            items, api_error = _search_keyword(keyword, budget)
-            if api_error is not None:
-                if api_error.error_code == "4013":
-                    quota_exceeded = True
-                state = (
-                    state.append_error(str(api_error))
-                    .append_trace("Shopping", f"search failed: {keyword}", level="warning")
-                )
-                break
+        if api_error is not None:
+            err_text = str(api_error)
+            if "4013" in err_text or "超限" in err_text:
+                quota_exceeded = True
+            state = (
+                state.append_error(err_text)
+                .append_trace("Shopping", f"search failed: {plan.keyword}", level="warning")
+            )
+            continue
 
-            candidates.extend(items)
-            calls_used += 1
+        picked = pick_top_n(
+            items,
+            outfit,
+            n=MAX_PER_ITEM,
+            budget=budget,
+            category=plan.category,
+            item_label=plan.label,
+            item_text=plan.item_text,
+            size_hint=plan.size_hint,
+            strict_budget=True,
+        )
+        all_products.extend(picked)
 
-        day_products = pick_top_n(candidates, outfit, n=5, budget=budget)
-        all_products.extend(day_products)
-
-        if not day_products:
+        if not picked:
             state = state.append_trace(
                 "Shopping",
-                f"no products matched for {outfit.date}",
+                f"no in-budget products for {plan.label} ({plan.keyword})",
                 level="warning",
             )
 

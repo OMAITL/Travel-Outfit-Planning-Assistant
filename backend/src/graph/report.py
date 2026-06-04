@@ -4,23 +4,61 @@ from datetime import date as DateType
 
 from pydantic import BaseModel, Field
 
-from src.graph.state import DailyOutfit, DailyWeather, ProductCard
+from src.graph.state import DailyOutfit, DailyWeather, OutfitInspiration, ProductCard
+
+
+class OutfitItemView(BaseModel):
+    label: str
+    text: str
+
+
+class ProductItemGroup(BaseModel):
+    """Products grouped under one outfit item (supports sub-tabs like 上装·T恤)."""
+
+    id: str
+    label: str
+    item_text: str
+    category: str
+    products: list[ProductCard] = Field(default_factory=list, max_length=3)
+
+
+class StyleReferenceView(BaseModel):
+    """Xiaohongshu outfit inspiration shown in the daily report."""
+
+    note_id: str
+    title: str = ""
+    cover_url: str = ""
+    image_urls: list[str] = Field(default_factory=list)
+    note_url: str = ""
+    user_name: str | None = None
+    liked_count: int | None = None
+    search_keyword: str | None = None
 
 
 class DailyReportCard(BaseModel):
     """Single-day slice of the final user-facing report."""
 
     date: DateType
+    spot_names: list[str] = Field(
+        default_factory=list,
+        description="Scenic spots scheduled for this day",
+    )
     weather: DailyWeather | None = None
     outfit: DailyOutfit | None = None
+    outfit_items: list[OutfitItemView] = Field(default_factory=list)
+    product_groups: list[ProductItemGroup] = Field(default_factory=list)
     look_image_url: str | None = Field(
         default=None,
         description="AI-generated outfit look image URL (Phase 4+)",
     )
+    style_references: list[StyleReferenceView] = Field(
+        default_factory=list,
+        description="Xiaohongshu outfit inspiration references",
+    )
     products: list[ProductCard] = Field(
         default_factory=list,
-        max_length=5,
-        description="Up to 5 matched Taobao products for the day",
+        max_length=12,
+        description="Up to 3 matched products per category (top/bottom/shoes/acc) per day",
     )
     degraded: bool = Field(
         default=False,

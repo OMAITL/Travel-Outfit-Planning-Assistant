@@ -53,10 +53,15 @@ def build_outfit_prompt(
     style: str = "休闲",
     gender: str | None = None,
     activities: list[str] | None = None,
+    spot_name: str | None = None,
 ) -> str:
     """Build a realistic travel outfit photo prompt from trip/outfit context."""
     template = load_image_prompt_template()
     gender_text = gender or "年轻"
+    spot = spot_name or destination
+    from src.tools.scenic_scene import resolve_spot_scene
+
+    spot_scene = resolve_spot_scene(spot, destination)
     return template.format(
         destination=destination,
         date=date,
@@ -65,6 +70,8 @@ def build_outfit_prompt(
         style=style,
         gender=gender_text,
         scene_description=_activities_to_scene(activities),
+        spot_scene=spot_scene,
+        spot_name=spot,
     )
 
 

@@ -1,6 +1,7 @@
 import src.graph  # noqa: F401 — triggers PlanningState.model_rebuild()
 from src.graph.nodes.assets import assets_node
 from src.graph.nodes.image import image_node
+from src.graph.nodes.inspiration import inspiration_node
 from src.graph.nodes.report import report_node
 from src.graph.nodes.shopping import shopping_node
 from src.graph.nodes.stylist import stylist_node
@@ -13,6 +14,7 @@ __all__ = [
     "stylist_node",
     "assets_node",
     "image_node",
+    "inspiration_node",
     "shopping_node",
     "report_node",
 ]

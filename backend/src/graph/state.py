@@ -20,12 +20,35 @@ class WeatherCondition(StrEnum):
     SNOWY = "雪"
 
 
+class BudgetByCategory(BaseModel):
+    """Per-category item budgets from the Vue trip form (CNY)."""
+
+    top: float = Field(default=0, ge=0)
+    bottom: float = Field(default=0, ge=0)
+    shoes: float = Field(default=0, ge=0)
+    acc: float = Field(default=0, ge=0)
+
+    @property
+    def total(self) -> float:
+        return self.top + self.bottom + self.shoes + self.acc
+
+    @property
+    def max_item(self) -> float:
+        return max(self.top, self.bottom, self.shoes, self.acc)
+
+
 class TripPreferences(BaseModel):
     activities: list[str] = Field(default_factory=list)
     gender: str | None = None
     style: str = "休闲"
+    spot_names: list[str] = Field(default_factory=list, description="User-selected scenic spots")
+    plan_mode: Literal["auto", "manual"] = Field(
+        default="auto",
+        description="auto = round-robin spot allocation; manual = user picks per day",
+    )
     budget_per_item: float | None = Field(default=None, ge=0)
     budget_total: float | None = Field(default=None, ge=0, description="整套穿搭总预算（元）")
+    budget_by_category: BudgetByCategory | None = None
     party_size: int = Field(default=1, ge=1)
     height_cm: float | None = Field(default=None, ge=0)
     weight_kg: float | None = Field(default=None, ge=0)
@@ -101,7 +124,9 @@ class DailyOutfit(BaseModel):
 
     @field_validator("search_keywords", mode="before")
     @classmethod
-    def strip_keywords(cls, value: list[str]) -> list[str]:
+    def strip_keywords(cls, value: list[str] | None) -> list[str]:
+        if value is None:
+            return []
         cleaned: list[str] = []
         for keyword in value:
             text = " ".join(str(keyword).split())
@@ -117,6 +142,21 @@ class ProductCard(BaseModel):
     detail_url: str
     num_iid: str | None = None
     trip_date: date | None = None
+    category: Literal["top", "bottom", "shoes", "acc"] | None = Field(
+        default=None,
+        description="Item category for UI tabs",
+    )
+    item_label: str | None = Field(default=None, description="Outfit item label, e.g. 上装")
+    item_text: str | None = Field(default=None, description="Parsed outfit item description")
+    within_budget: bool = Field(default=True)
+    size_hint: str | None = None
+
+
+class DayItinerary(BaseModel):
+    """Spots scheduled for a single trip day."""
+
+    date: date
+    spot_names: list[str] = Field(default_factory=list)
 
 
 class ChatMessage(BaseModel):
@@ -128,6 +168,20 @@ class OutfitLookImage(BaseModel):
     date: date
     image_url: str
     prompt: str | None = None
+
+
+class OutfitInspiration(BaseModel):
+    """Xiaohongshu outfit reference from Just One API."""
+
+    trip_date: date
+    note_id: str
+    title: str = ""
+    cover_url: str = ""
+    image_urls: list[str] = Field(default_factory=list)
+    note_url: str = ""
+    user_name: str | None = None
+    liked_count: int | None = None
+    search_keyword: str | None = None
 
 
 class TraceEvent(BaseModel):
@@ -145,9 +199,14 @@ class PlanningPhase(StrEnum):
 class PlanningState(BaseModel):
     messages: list[ChatMessage] = Field(default_factory=list)
     trip: TripContext | None = None
+    itinerary: list[DayItinerary] = Field(
+        default_factory=list,
+        description="Per-day scenic spot allocation for the trip",
+    )
     weather: list[DailyWeather] = Field(default_factory=list)
     outfits: list[DailyOutfit] = Field(default_factory=list)
     look_images: list[OutfitLookImage] = Field(default_factory=list)
+    outfit_inspirations: list[OutfitInspiration] = Field(default_factory=list)
     products: list[ProductCard] = Field(default_factory=list)
     report: TravelReport | None = None
     phase: PlanningPhase = PlanningPhase.COLLECTING

@@ -1,9 +1,12 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ProductSource = Literal["onebound", "justoneapi", "scraper", "mock"]
 
 # backend/ — fixed path, independent of cwd (Streamlit, pytest, CLI)
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -40,10 +43,55 @@ class Settings(BaseSettings):
     openai_api_base: str = "https://api.deepseek.com/v1"
     openai_model: str = "deepseek-chat"
 
+    # Product search: onebound | justoneapi | scraper | mock
+    product_source: ProductSource = Field(
+        default="onebound",
+        description="onebound=万邦, justoneapi=Just One API, scraper=爬虫, mock=演示",
+    )
+    product_fallback_scraper: bool = Field(
+        default=False,
+        description="When true, try scraper if OneBound returns quota error 4013",
+    )
+
     # OneBound Taobao API
     onebound_key: str | None = None
     onebound_secret: str | None = None
     onebound_max_calls_per_run: int = Field(default=8, ge=1)
+
+    # Just One API — Taobao search (https://docs.justoneapi.com)
+    justoneapi_token: str | None = None
+    justoneapi_base_url: str = Field(
+        default="https://api.justoneapi.com",
+        description="Mainland CN optional: http://47.117.133.51:30015",
+    )
+    justoneapi_sort: str = Field(
+        default="bid",
+        description="bid=价格升序(适合预算), _sale=销量, _bid=价格降序",
+    )
+    justoneapi_max_calls_per_run: int = Field(
+        default=8,
+        ge=1,
+        description="Max Taobao search API calls per planning run when PRODUCT_SOURCE=justoneapi",
+    )
+    justoneapi_xhs_notes_per_day: int = Field(
+        default=2,
+        ge=1,
+        le=5,
+        description="XHS reference notes per trip day",
+    )
+    justoneapi_xhs_max_calls_per_run: int = Field(
+        default=6,
+        ge=1,
+        description="Max XHS search+detail API calls per planning run",
+    )
+    justoneapi_xhs_fetch_detail: bool = Field(
+        default=True,
+        description="Fetch note detail for full image list after XHS search",
+    )
+
+    # Taobao scraper (experimental)
+    scraper_min_interval_sec: float = Field(default=2.0, ge=0.0)
+    scraper_user_agent: str | None = None
 
     # AMap (Gaode) Web Service — geocoding + weather
     amap_api_key: str | None = None

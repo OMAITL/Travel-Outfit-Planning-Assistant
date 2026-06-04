@@ -90,7 +90,7 @@ def test_full_workflow_with_mocked_nodes() -> None:
             return_value="https://img.example/look.png",
         ),
         patch(
-            "src.graph.nodes.shopping.search_taobao_items",
+            "src.graph.nodes.shopping.search_products",
             return_value=[
                 {
                     "title": "防晒衬衫",

@@ -13,6 +13,8 @@ from src.services.cache import cache_get, cache_set
 
 ONEBOUND_SEARCH_URL = "https://api-gw.onebound.cn/taobao/item_search"
 SUCCESS_CODES = {"0000", "2000"}
+REQUEST_TIMEOUT = httpx.Timeout(connect=10.0, read=45.0, write=10.0, pool=10.0)
+MAX_RETRIES = 2
 
 ONEBOUND_ERROR_HINTS: dict[str, str] = {
     "4013": "OneBound 调用次数已超限，请登录 open.onebound.cn 充值或升级套餐后重试",
@@ -116,8 +118,25 @@ def search_taobao_items(
         "lang": "cn",
     }
 
-    response = httpx.get(ONEBOUND_SEARCH_URL, params=params, timeout=15.0)
-    response.raise_for_status()
+    last_error: Exception | None = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = httpx.get(ONEBOUND_SEARCH_URL, params=params, timeout=REQUEST_TIMEOUT)
+            response.raise_for_status()
+            break
+        except httpx.TimeoutException as exc:
+            last_error = exc
+            if attempt + 1 >= MAX_RETRIES:
+                raise OneBoundError(
+                    "万邦 API 响应超时，请稍后重试（网络较慢时可减少行程天数或降低 ONEBOUND_MAX_CALLS_PER_RUN）",
+                    error_code="timeout",
+                ) from exc
+        except httpx.HTTPError as exc:
+            raise OneBoundError(f"万邦 API 网络错误: {exc}", error_code="network") from exc
+    else:
+        if last_error is not None:
+            raise OneBoundError(str(last_error), error_code="timeout") from last_error
+
     data = response.json()
 
     error_code = str(data.get("error_code", ""))
