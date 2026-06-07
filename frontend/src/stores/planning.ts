@@ -4,6 +4,7 @@ import { postPlan } from "@/api/client";
 import type { City, PlanningState, Spot, TripFormPayload } from "@/api/types";
 import { STATIC_CITIES } from "@/data/cities";
 import { parseDate, weatherIcon } from "@/utils/format";
+import { planAutoItineraryIds } from "@/utils/itinerary";
 
 const WEEKDAY_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
@@ -16,6 +17,9 @@ export interface TripDay {
   reason: string;
   spotIds: string[];
   sceneSpots: string[];
+  morningId?: string;
+  afternoonId?: string;
+  eveningId?: string;
 }
 
 const DEFAULT_DAYS: TripDay[] = [
@@ -144,15 +148,30 @@ export const usePlanningStore = defineStore("planning", () => {
     const ids = city.spots
       .filter((s) => selectedSpotIds.value.includes(s.id))
       .map((s) => s.id);
-    days.value.forEach((d) => {
-      d.spotIds = [];
-    });
     if (!ids.length) {
+      days.value.forEach((d) => {
+        d.spotIds = [];
+        d.morningId = undefined;
+        d.afternoonId = undefined;
+        d.eveningId = undefined;
+      });
       syncAllDays();
       return;
     }
-    ids.forEach((id, i) => {
-      days.value[i % days.value.length].spotIds.push(id);
+    const plans = planAutoItineraryIds(ids, city, days.value.length);
+    days.value.forEach((day, i) => {
+      const plan = plans[i];
+      if (!plan) {
+        day.spotIds = [];
+        day.morningId = undefined;
+        day.afternoonId = undefined;
+        day.eveningId = undefined;
+        return;
+      }
+      day.spotIds = [...plan.spotIds];
+      day.morningId = plan.morningId;
+      day.afternoonId = plan.afternoonId;
+      day.eveningId = plan.eveningId;
     });
     syncAllDays();
   }
@@ -231,7 +250,7 @@ export const usePlanningStore = defineStore("planning", () => {
   const reportModeNote = computed(() =>
     planMode.value === "manual"
       ? "✋ 你在左侧指定每日景点 · 下方卡片同步展示你的安排"
-      : "✨ 系统已分配行程 · 下方卡片为排期结果，可「编辑行程」微调",
+      : "✨ 系统已按所选景点分配每日上午/下午 · 同一景点可跨多天 · 可「编辑行程」微调",
   );
 
   const resultBadge = computed(() =>
@@ -267,6 +286,9 @@ export const usePlanningStore = defineStore("planning", () => {
     const d = days.value[dayIdx];
     if (!d) return;
     d.spotIds = [...ids];
+    d.morningId = ids[0];
+    d.afternoonId = ids[1];
+    d.eveningId = ids[2];
     syncDaySceneSpots(dayIdx);
     if (dayIdx === selectedDayIndex.value) syncAllDays();
   }
@@ -341,6 +363,8 @@ export const usePlanningStore = defineStore("planning", () => {
         : "";
       const spotNames = card.spot_names ?? [];
       const spotIds = resolveSpotIdsFromNames(spotNames);
+      const resolveId = (name?: string | null) =>
+        name ? resolveSpotIdsFromNames([name])[0] : undefined;
       return {
         dateShort: `${m}/${dayNum}`,
         weekday: wd,
@@ -353,6 +377,9 @@ export const usePlanningStore = defineStore("planning", () => {
           "根据当日天气与景点推荐穿搭。",
         spotIds,
         sceneSpots: sceneLabelsFromSpotNames(spotNames),
+        morningId: resolveId(card.morning),
+        afternoonId: resolveId(card.afternoon),
+        eveningId: resolveId(card.evening),
       };
     });
   }

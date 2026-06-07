@@ -9,6 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field, model_validator
 
 from src.graph.state import DailyOutfit, PlanningState
+from src.services.itinerary import day_all_spots
 from src.services.llm import get_chat_model, invoke_structured, load_prompt
 
 
@@ -45,8 +46,31 @@ def _format_itinerary(state: PlanningState) -> str:
         return "No scenic spots assigned; plan outfits for general sightseeing."
     rows = []
     for row in state.itinerary:
-        spots = "、".join(row.spot_names) if row.spot_names else "（未指定景点，按城市通用游览）"
-        rows.append(f"- {row.date}: {spots}")
+        spots = day_all_spots(row)
+        if row.morning or row.afternoon or row.evening:
+            parts = []
+            if row.morning:
+                parts.append(f"上午 {row.morning}")
+            if row.afternoon:
+                parts.append(f"下午 {row.afternoon}")
+            if row.evening:
+                parts.append(f"晚间 {row.evening}")
+            slot_line = f"- {row.date}: {' | '.join(parts)}"
+            if len(spots) > 1:
+                slot_line += (
+                    f"（当日 {len(spots)} 个景点：{'、'.join(spots)}；"
+                    "需一套穿搭同时适配以上全部景点）"
+                )
+            rows.append(slot_line)
+            continue
+        if len(spots) > 1:
+            rows.append(
+                f"- {row.date}: {'、'.join(spots)}"
+                f"（当日多景点，需一套穿搭同时适配以上全部景点）"
+            )
+            continue
+        spot_line = "、".join(spots) if spots else "（未指定景点，按城市通用游览）"
+        rows.append(f"- {row.date}: {spot_line}")
     return "\n".join(rows)
 
 
@@ -82,6 +106,47 @@ def _format_trip(state: PlanningState) -> str:
     )
 
 
+def _format_trends(state: PlanningState) -> str:
+    if not state.outfit_trends:
+        return "No Xiaohongshu trend data — plan from weather and user preferences only."
+    rows = []
+    for trend in sorted(state.outfit_trends, key=lambda item: item.date):
+        rows.append(
+            json.dumps(
+                {
+                    "date": str(trend.date),
+                    "dominant_style": trend.dominant_style,
+                    "top_picks": trend.top_picks,
+                    "bottom_picks": trend.bottom_picks,
+                    "shoes_picks": trend.shoes_picks,
+                    "bag_picks": trend.bag_picks,
+                    "acc_picks": trend.acc_picks,
+                    "color_palette": trend.color_palette,
+                    "scene_vibe": trend.scene_vibe,
+                },
+                ensure_ascii=False,
+            )
+        )
+    return "\n".join(rows)
+
+
+def _format_xhs_refs(state: PlanningState) -> str:
+    if not state.outfit_inspirations:
+        return "No XHS reference notes."
+    by_date: dict = {}
+    for ref in state.outfit_inspirations:
+        by_date.setdefault(ref.trip_date, []).append(ref)
+    rows = []
+    for day in sorted(by_date):
+        day_refs = sorted(by_date[day], key=lambda r: r.liked_count or 0, reverse=True)
+        spot_hint = day_refs[0].search_keyword if day_refs else ""
+        for ref in day_refs[:3]:
+            rows.append(
+                f"- {day} | spot keyword: {spot_hint} | {ref.liked_count or 0} likes | {ref.title}"
+            )
+    return "\n".join(rows)
+
+
 def stylist_node(state: PlanningState, *, llm=None) -> PlanningState:
     if state.trip is None or not state.trip.is_complete:
         return state.append_trace("Stylist", "skipped: trip not ready", level="warning")
@@ -92,8 +157,14 @@ def stylist_node(state: PlanningState, *, llm=None) -> PlanningState:
         f"Trip:\n{_format_trip(state)}\n\n"
         f"Daily itinerary (spots per day):\n{_format_itinerary(state)}\n\n"
         f"Weather:\n{_format_weather(state)}\n\n"
+        f"Xiaohongshu reference notes:\n{_format_xhs_refs(state)}\n\n"
+        f"XHS aggregated trends (primary outfit source when present):\n{_format_trends(state)}\n\n"
         "Produce one outfit for each day from start_date to end_date. "
-        "Tailor recommendation_reason to the spots scheduled that day."
+        "Ground outfits in XHS trends when available. "
+        "Each day MUST have a different outfit — vary colors and hero pieces by date and spot. "
+        "When a day lists multiple scenic spots, design ONE outfit that works at ALL of them "
+        "(comfortable walking, photo-ready, weather-appropriate, no outfit change mid-day). "
+        "In recommendation_reason, explain how the outfit fits each spot that day by name."
     )
 
     messages = [
@@ -114,12 +185,14 @@ def stylist_node(state: PlanningState, *, llm=None) -> PlanningState:
             messages,
             retries=1,
             retry_hint=stylist_retry_hint,
+            operation="stylist_plan",
         )
         if not result.outfits:
             result = invoke_structured(
                 model,
                 StylistOutput,
                 [*messages, HumanMessage(content=stylist_retry_hint)],
+                operation="stylist_plan_retry",
             )
     except OutputParserException as exc:
         msg = f"穿搭规划解析失败：{exc}"

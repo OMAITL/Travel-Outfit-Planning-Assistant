@@ -47,3 +47,26 @@ def test_trip_form_schema_accepts_category_budgets() -> None:
 def test_plan_requires_message_or_trip() -> None:
     res = client.post("/api/plan", json={})
     assert res.status_code == 400
+
+
+def test_recordings_list_endpoint(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("API_RECORD_ENABLED", "true")
+    monkeypatch.setenv("API_RECORD_DIR", str(tmp_path / "recordings"))
+    from src.config import get_settings
+    from src.services.api_recorder import record_api_exchange
+
+    get_settings.cache_clear()
+    record_api_exchange(
+        "deepseek",
+        "stylist_plan",
+        request={"messages": []},
+        response={"outfits": []},
+    )
+
+    res = client.get("/api/recordings", params={"provider": "deepseek", "limit": 5})
+    get_settings.cache_clear()
+
+    assert res.status_code == 200
+    data = res.json()
+    assert data["count"] >= 1
+    assert data["items"][0]["provider"] == "deepseek"

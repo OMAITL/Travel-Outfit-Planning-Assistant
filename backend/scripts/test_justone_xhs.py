@@ -1,7 +1,7 @@
 """
-Test Just One API — 小红书笔记搜索 V2 + 笔记详情 V2
+Test Just One API — 小红书笔记搜索 V3 + 笔记详情 V2
 
-流程: 关键词搜索 → 取 noteId → 拉详情拿完整图片列表（与线上一致）。
+流程: 关键词搜索 (v3) → 取 noteId → 拉详情拿完整图片列表（与线上一致）。
 
 用法:
   uv run python scripts/test_justone_xhs.py
@@ -46,7 +46,7 @@ def main() -> int:
     print(f"BASE_URL: {base}")
     print(f"TOKEN:    {'已配置 (' + token[:4] + '…)' if len(token) >= 4 else '未配置'}")
     print(f"KEYWORD:  {args.keyword}")
-    print(f"流程:     搜索 V2 → {'仅封面' if args.no_detail else '详情 V2 补全图片'}")
+    print(f"流程:     搜索 V3 → {'仅封面' if args.no_detail else '详情 V2 补全图片'}")
     print()
 
     if not token:

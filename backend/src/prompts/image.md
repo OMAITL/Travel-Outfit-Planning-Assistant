@@ -1,7 +1,22 @@
-Realistic full-body travel fashion photo of a {gender} person wearing: {outfit_summary}.
-Location: {destination}, {scene_description}.
-Scenic spot background: {spot_scene} — the background must clearly show this real tourist landmark, not a studio backdrop.
-Weather context: {weather_summary}. Style: {style}.
-Photography: natural daylight, lifestyle travel photo at the scenic spot, person mid-distance full body,
-authentic destination environment matching {spot_name}, realistic fabric and fit,
-high quality fashion editorial, no text, no watermark, no brand logos.
+# 即梦文生图 Prompt 规范（旅行穿搭效果图）
+
+遵循即梦官方建议：
+- **画面内容**：用连贯自然语言写清主体、行为、环境（中文）
+- **画面美学**：用短词语写风格、色彩、光影、构图
+- **用途与画幅**：写明图像类型与比例，便于模型适配场景
+
+## 结构模板
+
+```
+用于{用途}的{画幅}时尚摄影大片。
+
+【画面内容】{主体}身穿{穿搭单品}，在{景点环境}{行为}。{天气氛围}。
+
+【环境】{景点实景描述}，真实旅行地标，非影棚背景。
+
+【画面美学】{风格}风旅行穿搭摄影；{光影}；{色彩}；浅景深；85mm人像质感；中远景全身构图；面料自然贴合。
+
+【约束】仅一位人物，无拼图分屏，无文字水印，无品牌logo。
+```
+
+代码实现见 `src/tools/image_gen.py` 的 `build_outfit_prompt()`。

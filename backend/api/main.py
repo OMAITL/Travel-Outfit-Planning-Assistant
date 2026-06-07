@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -15,7 +17,18 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 import src.graph  # noqa: F401 — PlanningState.model_rebuild()
-from api.schemas import CatalogResponse, CityOut, PlanRequest, PlanResponse, SpotOut, TripFormIn
+from api.schemas import (
+    ApiRecordingDetail,
+    ApiRecordingListResponse,
+    ApiRecordingSummary,
+    CatalogResponse,
+    CityOut,
+    PlanRequest,
+    PlanResponse,
+    SpotOut,
+    TripFormIn,
+)
+from src.services.api_recorder import get_recording, list_recordings
 from app.data.city_spots import CITY_CATALOG, CITY_KEYS
 from app.utils.trip_message import build_trip_context, build_trip_message
 from src.config import reload_settings
@@ -51,6 +64,106 @@ def _load_env() -> None:
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/recordings", response_model=ApiRecordingListResponse)
+def api_list_recordings(
+    provider: str | None = Query(
+        default=None,
+        description="taobao_onebound | taobao_justone | xhs_justone | jimeng | deepseek",
+    ),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> ApiRecordingListResponse:
+    """List recent API request/response recordings (newest first)."""
+    rows = list_recordings(provider=provider, limit=limit)
+    return ApiRecordingListResponse(
+        items=[ApiRecordingSummary.model_validate(row) for row in rows],
+        count=len(rows),
+    )
+
+
+@app.get("/api/recordings/{record_id}", response_model=ApiRecordingDetail)
+def api_get_recording(record_id: str) -> ApiRecordingDetail:
+    """Fetch one recorded API exchange by id."""
+    row = get_recording(record_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Recording not found")
+    return ApiRecordingDetail.model_validate(row)
+
+
+_PROXY_ALLOWED_SUFFIXES = (
+    "xhscdn.com",
+    "xiaohongshu.com",
+    "alicdn.com",
+    "tbcdn.cn",
+    "taobaocdn.com",
+    "tmall.com",
+    "tmall.hk",
+    "1688.com",
+    "volces.com",
+    "volccdn.com",
+    "byteimg.com",
+)
+
+_PROXY_REFERERS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("taobao.com", "tmall.com", "alicdn.com", "tbcdn.cn", "taobaocdn.com", "1688.com"), "https://www.taobao.com/"),
+    (("xhscdn.com", "xiaohongshu.com"), "https://www.xiaohongshu.com/"),
+)
+
+
+def _proxy_url_allowed(url: str) -> bool:
+    try:
+        host = urlparse(url).hostname or ""
+    except ValueError:
+        return False
+    host = host.lower()
+    return any(host == suffix or host.endswith(f".{suffix}") for suffix in _PROXY_ALLOWED_SUFFIXES)
+
+
+def _proxy_referer_for(url: str) -> str:
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except ValueError:
+        return "https://www.taobao.com/"
+    for suffixes, referer in _PROXY_REFERERS:
+        if any(host == suffix or host.endswith(f".{suffix}") for suffix in suffixes):
+            return referer
+    return "https://www.taobao.com/"
+
+
+@app.get("/api/proxy-image")
+def proxy_image(url: str = Query(..., min_length=8)) -> Response:
+    """Proxy external CDN images (XHS / Taobao / Jimeng) to avoid browser hotlink blocks."""
+    if not url.startswith(("http://", "https://")) or not _proxy_url_allowed(url):
+        raise HTTPException(status_code=400, detail="Image URL not allowed")
+
+    referer = _proxy_referer_for(url)
+    try:
+        with httpx.Client(timeout=httpx.Timeout(15.0), follow_redirects=True) as client:
+            upstream = client.get(
+                url,
+                headers={
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    ),
+                    "Referer": referer,
+                    "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+                },
+            )
+            upstream.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Image fetch failed: {exc}") from exc
+
+    content_type = upstream.headers.get("content-type") or "image/jpeg"
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=502, detail="Upstream response is not an image")
+
+    return Response(
+        content=upstream.content,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @app.get("/api/catalog/cities", response_model=CatalogResponse)
@@ -113,6 +226,7 @@ def _message_from_trip(form: TripFormIn) -> tuple[str, PlanningState]:
         start_date=form.start_date,
         end_date=form.end_date,
         spot_names=form.spot_names,
+        destination=form.destination,
         plan_mode=form.plan_mode,
         daily_spot_names=form.daily_spot_names or None,
     )

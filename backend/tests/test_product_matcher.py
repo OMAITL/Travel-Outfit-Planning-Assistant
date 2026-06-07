@@ -37,6 +37,23 @@ def test_pick_top_n_returns_product_cards() -> None:
             "price": "49.00",
             "detail_url": "https://item.taobao.com/item.htm?id=1",
             "num_iid": "1",
+            "order_pay_uv": 5000,
+        },
+        {
+            "title": "女白色防晒衬衫",
+            "pic_url": "https://img.example/4.jpg",
+            "price": "59.00",
+            "detail_url": "https://item.taobao.com/item.htm?id=4",
+            "num_iid": "4",
+            "order_pay_uv": 3000,
+        },
+        {
+            "title": "女轻薄防晒衬衫",
+            "pic_url": "https://img.example/5.jpg",
+            "price": "55.00",
+            "detail_url": "https://item.taobao.com/item.htm?id=5",
+            "num_iid": "5",
+            "order_pay_uv": 2000,
         },
         {
             "title": "男皮鞋",
@@ -46,10 +63,10 @@ def test_pick_top_n_returns_product_cards() -> None:
             "num_iid": "2",
         },
     ]
-    products = pick_top_n(candidates, outfit, n=1, budget=200)
-    assert len(products) == 1
+    products = pick_top_n(candidates, outfit, n=3, budget=200)
+    assert len(products) == 3
     assert products[0].num_iid == "1"
-    assert products[0].trip_date == date(2026, 7, 10)
+    assert all("皮鞋" not in product.title for product in products)
 
 
 def test_to_product_card_skips_without_link() -> None:

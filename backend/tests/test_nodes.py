@@ -16,6 +16,7 @@ from src.graph.state import (
     ChatMessage,
     DailyOutfit,
     DailyWeather,
+    DayItinerary,
     PlanningPhase,
     PlanningState,
     TripContext,
@@ -98,11 +99,62 @@ def test_shopping_node_picks_products() -> None:
 
 def test_image_node_writes_look_images() -> None:
     state = _load_fixture_state()
-    with patch("src.graph.nodes.image.generate_outfit_look", return_value="https://img.example/look.png"):
+    with patch("src.graph.nodes.image.generate_outfit_look", return_value="https://img.example/look.png") as mock_gen:
         result = image_node(state)
 
     assert len(result.look_images) == 1
     assert result.look_images[0].image_url.startswith("https://")
+    assert result.look_images[0].spot_name == "大理"
+    mock_gen.assert_called_once()
+    assert mock_gen.call_args.kwargs.get("reference_image_url") is None
+
+
+def test_image_node_generates_one_image_per_spot() -> None:
+    state = _load_fixture_state()
+    state = state.model_copy(
+        update={
+            "itinerary": [
+                DayItinerary(
+                    date=date(2026, 7, 10),
+                    spot_names=["洱海生态廊道", "大理古城"],
+                )
+            ]
+        }
+    )
+    with patch("src.graph.nodes.image.generate_outfit_look", return_value="https://img.example/look.png") as mock_gen:
+        result = image_node(state)
+
+    assert len(result.look_images) == 2
+    assert {look.spot_name for look in result.look_images} == {"洱海生态廊道", "大理古城"}
+    assert mock_gen.call_count == 2
+
+
+def test_image_node_generates_from_planned_outfit_not_xhs_reference() -> None:
+    from datetime import date
+
+    from src.graph.state import OutfitInspiration
+
+    state = _load_fixture_state()
+    state = state.model_copy(
+        update={
+            "outfit_inspirations": [
+                OutfitInspiration(
+                    trip_date=date(2026, 7, 10),
+                    note_id="note-1",
+                    title="洱海穿搭",
+                    cover_url="https://xhs.example/outfit.jpg",
+                    liked_count=5000,
+                )
+            ]
+        }
+    )
+    with patch("src.graph.nodes.image.generate_outfit_look", return_value="https://img.example/look.png") as mock_gen:
+        result = image_node(state)
+
+    assert len(result.look_images) == 1
+    assert mock_gen.call_args.kwargs["reference_image_url"] is None
+    prompt = mock_gen.call_args.args[0]
+    assert "防晒" in prompt or "shirt" in prompt.lower()
 
 
 def test_image_node_skips_when_disabled(monkeypatch: pytest.MonkeyPatch) -> None:

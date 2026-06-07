@@ -145,6 +145,68 @@ def parse_outfit_items(summary: str) -> list[tuple[str, str]]:
     return items or [("穿搭", summary)]
 
 
+_SKIP_ITEM_TEXT = {"", "无", "不需要", "none", "n/a", "-", "—"}
+
+_NON_PURCHASABLE_HINTS = (
+    "发型",
+    "编发",
+    "麻花辫",
+    "侧边辫",
+    "马尾",
+    "丸子头",
+    "卷发",
+    "直发",
+    "刘海",
+    "发色",
+    "妆容",
+    "化妆",
+    "口红",
+    "眼影",
+    "粉底",
+    "腮红",
+    "拍照姿势",
+    "姿势",
+    "pose",
+    "摆拍",
+    "机位",
+    "角度",
+    "美甲",
+    "纹身",
+)
+
+
+def is_purchasable_item_text(text: str) -> bool:
+    """True when the outfit slot represents a shoppable garment or accessory."""
+    cleaned = text.strip()
+    if not cleaned or cleaned.lower() in _SKIP_ITEM_TEXT:
+        return False
+    return not any(hint in cleaned for hint in _NON_PURCHASABLE_HINTS)
+
+
+def split_compound_item_text(text: str) -> list[str]:
+    """Split accessory lists like 宽檐草帽、民族风耳环、草编手提包 into separate slots."""
+    parts = re.split(r"[,，、;；+/＋|｜]+", text.strip())
+    cleaned = [part.strip() for part in parts if part.strip()]
+    cleaned = [part for part in cleaned if part.lower() not in _SKIP_ITEM_TEXT]
+    return cleaned or [text.strip()]
+
+
+def expand_outfit_item_slots(items: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Expand compound item descriptions into one slot per purchasable piece."""
+    expanded: list[tuple[str, str]] = []
+    for label, text in items:
+        if not is_purchasable_item_text(text):
+            continue
+        sub_items = split_compound_item_text(text)
+        if len(sub_items) <= 1:
+            expanded.append((label, text))
+            continue
+        for sub in sub_items:
+            if is_purchasable_item_text(sub):
+                expanded.append((label, sub))
+    return expanded
+
+
 def derive_outfit_scores(
     outfit_summary: str,
     preferences: TripPreferences | None = None,

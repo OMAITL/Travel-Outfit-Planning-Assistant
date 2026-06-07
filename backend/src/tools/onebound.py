@@ -6,9 +6,12 @@ import html
 import re
 from typing import Any
 
+import time
+
 import httpx
 
 from src.config import get_settings
+from src.services.api_recorder import record_api_exchange
 from src.services.cache import cache_get, cache_set
 
 ONEBOUND_SEARCH_URL = "https://api-gw.onebound.cn/taobao/item_search"
@@ -40,6 +43,45 @@ def _parse_items(data: dict[str, Any]) -> list[dict[str, Any]]:
     return [normalize_taobao_item(item) for item in raw_items if isinstance(item, dict)]
 
 
+def normalize_taobao_pic_url(pic_url: str) -> str:
+    """Convert Taobao/JustOne image paths to a fetchable img.alicdn.com URL."""
+    pic_url = html.unescape(str(pic_url or "")).strip()
+    if not pic_url:
+        return ""
+    if pic_url.startswith("//"):
+        pic_url = f"https:{pic_url}"
+
+    if re.search(r"search\d*\.alicdn\.com", pic_url, re.IGNORECASE):
+        match = re.search(
+            r"/uploaded/((?:i[1-4]/)+.+?\.(?:jpg|jpeg|png|webp|gif))",
+            pic_url,
+            re.IGNORECASE,
+        )
+        if match:
+            path = match.group(1)
+            while True:
+                shard = re.match(r"^(i[1-4]/)(i[1-4]/)(.+)", path, re.IGNORECASE)
+                if not shard or shard.group(1).lower() == shard.group(2).lower():
+                    break
+                path = f"{shard.group(2)}{shard.group(3)}"
+            path = re.sub(r"^(i[1-4]/)\1", r"\1", path, flags=re.IGNORECASE)
+            return f"https://img.alicdn.com/{path.split('?')[0]}"
+        for marker in ("/uploaded/", "/imgextra/"):
+            if marker in pic_url:
+                tail = pic_url.split(marker, 1)[1].split("?")[0]
+                tail = re.sub(r"^(i[1-4]/)\1", r"\1", tail, flags=re.IGNORECASE)
+                if re.match(r"^i[1-4]/", tail, re.IGNORECASE):
+                    return f"https://img.alicdn.com/{tail}"
+
+    if pic_url.startswith(("http://", "https://")):
+        return pic_url.split("?")[0]
+
+    if re.match(r"^i[1-4]/", pic_url, re.IGNORECASE):
+        return f"https://img.alicdn.com/{pic_url.split('?')[0]}"
+
+    return pic_url
+
+
 def normalize_taobao_item(item: dict[str, Any]) -> dict[str, Any]:
     """Normalize OneBound / Taobao item fields for downstream ProductCard mapping."""
     normalized = dict(item)
@@ -51,13 +93,11 @@ def normalize_taobao_item(item: dict[str, Any]) -> dict[str, Any]:
     pic_url = str(
         item.get("pic_url") or item.get("pic") or item.get("thumbnail") or ""
     ).strip()
-    if pic_url.startswith("//"):
-        pic_url = f"https:{pic_url}"
-    elif pic_url and not pic_url.startswith(("http://", "https://")):
-        pic_url = f"https://{pic_url.lstrip('/')}"
-    normalized["pic_url"] = pic_url
+    normalized["pic_url"] = normalize_taobao_pic_url(pic_url)
 
     num_iid = item.get("num_iid")
+    if num_iid is not None:
+        normalized["num_iid"] = str(num_iid)
     detail_url = str(
         item.get("detail_url") or item.get("item_url") or item.get("url") or ""
     ).strip()
@@ -118,6 +158,12 @@ def search_taobao_items(
         "lang": "cn",
     }
 
+    request_log = {
+        "method": "GET",
+        "url": ONEBOUND_SEARCH_URL,
+        "params": {k: v for k, v in params.items() if k not in {"key", "secret"}},
+    }
+    started = time.perf_counter()
     last_error: Exception | None = None
     for attempt in range(MAX_RETRIES):
         try:
@@ -127,11 +173,28 @@ def search_taobao_items(
         except httpx.TimeoutException as exc:
             last_error = exc
             if attempt + 1 >= MAX_RETRIES:
+                record_api_exchange(
+                    "taobao_onebound",
+                    "item_search",
+                    request_log,
+                    status="error",
+                    error=str(exc),
+                    duration_ms=(time.perf_counter() - started) * 1000,
+                    metadata={"attempt": attempt + 1},
+                )
                 raise OneBoundError(
                     "万邦 API 响应超时，请稍后重试（网络较慢时可减少行程天数或降低 ONEBOUND_MAX_CALLS_PER_RUN）",
                     error_code="timeout",
                 ) from exc
         except httpx.HTTPError as exc:
+            record_api_exchange(
+                "taobao_onebound",
+                "item_search",
+                request_log,
+                status="error",
+                error=str(exc),
+                duration_ms=(time.perf_counter() - started) * 1000,
+            )
             raise OneBoundError(f"万邦 API 网络错误: {exc}", error_code="network") from exc
     else:
         if last_error is not None:
@@ -143,7 +206,27 @@ def search_taobao_items(
     if error_code not in SUCCESS_CODES:
         reason = str(data.get("reason") or data.get("error") or error_code)
         message = _format_onebound_error(error_code, reason)
+        record_api_exchange(
+            "taobao_onebound",
+            "item_search",
+            request_log,
+            response=data,
+            status="error",
+            error=message,
+            duration_ms=(time.perf_counter() - started) * 1000,
+            metadata={"error_code": error_code},
+        )
         raise OneBoundError(message, error_code=error_code)
+
+    record_api_exchange(
+        "taobao_onebound",
+        "item_search",
+        request_log,
+        response=data,
+        status="success",
+        duration_ms=(time.perf_counter() - started) * 1000,
+        metadata={"http_status": response.status_code},
+    )
 
     items = _parse_items(data)
     if use_cache and items:

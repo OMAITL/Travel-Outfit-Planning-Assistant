@@ -118,4 +118,12 @@ def test_compile_workflow_is_cached() -> None:
 def test_graph_structure_has_expected_nodes() -> None:
     graph = compile_workflow()
     node_names = set(graph.get_graph().nodes)
-    assert {"trip", "weather", "stylist", "assets", "report"}.issubset(node_names)
+    assert {
+        "trip",
+        "weather",
+        "inspiration",
+        "vision",
+        "stylist",
+        "assets",
+        "report",
+    }.issubset(node_names)

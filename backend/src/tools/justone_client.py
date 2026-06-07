@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 
 from src.config import get_settings
+from src.services.api_recorder import Provider, record_api_exchange
 
 CN_BASE_URL = "http://47.117.133.51:30015"
 REQUEST_TIMEOUT = httpx.Timeout(connect=15.0, read=90.0, write=15.0, pool=15.0)
@@ -33,6 +34,13 @@ class JustOneApiError(Exception):
     def __init__(self, message: str, *, error_code: str | None = None) -> None:
         super().__init__(message)
         self.error_code = error_code
+
+
+def _provider_for_path(path: str) -> Provider:
+    lower = path.lower()
+    if "xiaohongshu" in lower or "/xhs" in lower:
+        return "xhs_justone"
+    return "taobao_justone"
 
 
 def format_justone_error(code: str, message: str, *, context: str = "request") -> str:
@@ -68,8 +76,18 @@ def justone_get(
     url = f"{base}{path}"
     query = {"token": token, **params}
 
+    provider = _provider_for_path(path)
+    operation = path.strip("/").replace("/", "_") or "justone_request"
+    request_log = {
+        "method": "GET",
+        "url": url,
+        "path": path,
+        "params": params,
+    }
+
     last_error: Exception | None = None
     payload: dict[str, Any] | None = None
+    started = time.perf_counter()
     for attempt in range(MAX_RETRIES + 1):
         if attempt > 0:
             time.sleep(3 * attempt)
@@ -84,19 +102,57 @@ def justone_get(
         except httpx.TimeoutException as exc:
             last_error = exc
             if attempt >= MAX_RETRIES:
+                record_api_exchange(
+                    provider,
+                    operation,
+                    request_log,
+                    response=None,
+                    status="error",
+                    error=str(exc),
+                    duration_ms=(time.perf_counter() - started) * 1000,
+                    metadata={"attempt": attempt + 1},
+                )
                 raise JustOneApiError(
                     "Just One API 响应超时，请稍后重试或改用 JUSTONEAPI_BASE_URL 国内节点",
                     error_code="timeout",
                 ) from exc
             continue
         except httpx.HTTPError as exc:
+            record_api_exchange(
+                provider,
+                operation,
+                request_log,
+                response=None,
+                status="error",
+                error=str(exc),
+                duration_ms=(time.perf_counter() - started) * 1000,
+            )
             raise JustOneApiError(f"Just One API 网络错误: {exc}", error_code="network") from exc
 
         code = str(payload.get("code", ""))
         if code in SUCCESS_CODES:
+            record_api_exchange(
+                provider,
+                operation,
+                request_log,
+                response=payload,
+                status="success",
+                duration_ms=(time.perf_counter() - started) * 1000,
+                metadata={"attempt": attempt + 1, "http_status": response.status_code},
+            )
             break
         if code not in RETRYABLE_CODES or attempt >= MAX_RETRIES:
             message = str(payload.get("message") or payload.get("msg") or code)
+            record_api_exchange(
+                provider,
+                operation,
+                request_log,
+                response=payload,
+                status="error",
+                error=message,
+                duration_ms=(time.perf_counter() - started) * 1000,
+                metadata={"attempt": attempt + 1, "error_code": code},
+            )
             raise JustOneApiError(format_justone_error(code, message), error_code=code)
     else:
         if last_error is not None:

@@ -140,7 +140,7 @@ onUnmounted(() => document.removeEventListener("click", onDocClick));
 
     <div v-else class="plan-block plan-block-auto">
       <p class="plan-hint plan-hint-compact plan-hint-auto">
-        系统将根据所选景点自动排期
+        仅使用你在左侧勾选的景点，按顺序划分连续时段（同一景点可玩多天）
       </p>
     </div>
   </div>

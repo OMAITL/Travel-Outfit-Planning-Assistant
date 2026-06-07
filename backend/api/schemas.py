@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -72,3 +72,34 @@ class CityOut(BaseModel):
 
 class CatalogResponse(BaseModel):
     cities: list[CityOut]
+
+
+class ApiRecordingSummary(BaseModel):
+    id: str | None = None
+    timestamp: str | None = None
+    provider: str | None = None
+    operation: str | None = None
+    status: str | None = None
+    duration_ms: float | None = None
+    request_hash: str | None = None
+    path: str | None = None
+
+
+class ApiRecordingListResponse(BaseModel):
+    items: list[ApiRecordingSummary]
+    count: int
+
+
+class ApiRecordingDetail(BaseModel):
+    id: str
+    timestamp: str | None = None
+    provider: str
+    operation: str
+    status: str
+    error: str | None = None
+    duration_ms: float | None = None
+    request_hash: str | None = None
+    request: Any = None
+    response: Any = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    path: str | None = None

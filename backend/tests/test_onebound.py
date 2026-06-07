@@ -55,6 +55,25 @@ def test_search_taobao_items_raises_on_api_error(monkeypatch: pytest.MonkeyPatch
     assert "4013" in str(exc_info.value)
 
 
+def test_normalize_taobao_pic_url_from_justone_recording() -> None:
+    from src.tools.onebound import normalize_taobao_pic_url
+
+    relative = "i4/2987571191/O1CN013srkaW1KfWqoai5mo_!!2987571191-0-scmitem176000.jpg"
+    broken_full = (
+        "https://g.search.alicdn.com/img/bao/uploaded/i4/i4/2987571191/"
+        "O1CN013srkaW1KfWqoai5mo_!!2987571191-0-scmitem176000.jpg"
+    )
+    broken_search1 = (
+        "https://g.search1.alicdn.com/img/bao/uploaded/i4/i2/2632725399/"
+        "O1CN01A4cDMz1pknVFX50Qx_!!2632725399.jpg"
+    )
+    expected = f"https://img.alicdn.com/{relative}"
+    expected_search1 = "https://img.alicdn.com/i2/2632725399/O1CN01A4cDMz1pknVFX50Qx_!!2632725399.jpg"
+    assert normalize_taobao_pic_url(relative) == expected
+    assert normalize_taobao_pic_url(broken_full) == expected
+    assert normalize_taobao_pic_url(broken_search1) == expected_search1
+
+
 def test_normalize_taobao_item_builds_urls() -> None:
     item = normalize_taobao_item(
         {
@@ -92,4 +111,4 @@ def test_search_taobao_items_uses_cache(monkeypatch: pytest.MonkeyPatch) -> None
     mock_get.assert_not_called()
     assert len(items) == 1
     assert items[0]["title"] == "cached"
-    assert items[0]["pic_url"] == "https://x"
+    assert items[0]["pic_url"] == "x"

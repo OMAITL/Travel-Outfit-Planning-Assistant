@@ -28,6 +28,18 @@ SPOT_SCENE_CATALOG: dict[str, dict[str, str]] = {
         "prompt_en": "Xizhou ancient town golden wheat fields, white walled courtyard houses",
         "prompt_zh": "喜洲古镇麦浪与白墙灰瓦",
     },
+    "宽窄巷子": {
+        "prompt_en": "Kuanzhai Alley Chengdu, traditional courtyard houses, grey brick walls, wet stone pavement",
+        "prompt_zh": "成都宽窄巷子，青砖灰瓦四合院，湿润石板路，人文街拍",
+    },
+    "大熊猫基地": {
+        "prompt_en": "Giant Panda Research Base Chengdu, bamboo forest path, lush green nature park",
+        "prompt_zh": "成都大熊猫繁育研究基地，竹林绿道，自然生态背景",
+    },
+    "大熊猫繁育研究基地": {
+        "prompt_en": "Giant Panda Research Base Chengdu, bamboo forest path, lush green nature park",
+        "prompt_zh": "成都大熊猫繁育研究基地，竹林绿道，自然生态背景",
+    },
 }
 
 
@@ -39,7 +51,28 @@ def resolve_spot_scene(spot_name: str, destination: str) -> str:
     return f"{destination} {spot_name} 真实旅行景点背景，自然光街拍"
 
 
+def resolve_spot_scene_zh(spot_name: str, destination: str) -> str:
+    """Chinese-only scenic description for Jimeng prompts (词源语言)."""
+    entry = SPOT_SCENE_CATALOG.get(spot_name)
+    if entry:
+        return entry["prompt_zh"]
+    return f"{destination}{spot_name}真实旅游景点实景，自然光街拍环境"
+
+
 def primary_spot_for_day(spot_names: list[str], destination: str) -> str:
     if spot_names:
         return spot_names[0]
     return destination
+
+
+def unique_spots_for_images(spot_names: list[str], destination: str) -> list[str]:
+    """Return ordered unique spots to render; fall back to destination when empty."""
+    unique: list[str] = []
+    seen: set[str] = set()
+    for name in spot_names:
+        cleaned = str(name or "").strip()
+        if not cleaned or cleaned in seen:
+            continue
+        seen.add(cleaned)
+        unique.append(cleaned)
+    return unique or [destination]

@@ -74,11 +74,15 @@ export interface StyleReference {
 export interface DailyReportCard {
   date: string;
   spot_names?: string[];
+  morning?: string | null;
+  afternoon?: string | null;
+  evening?: string | null;
   weather: DailyWeather | null;
   outfit: DailyOutfit | null;
   outfit_items?: OutfitItemView[];
   product_groups?: ProductItemGroup[];
   look_image_url: string | null;
+  look_images_by_spot?: Record<string, string>;
   style_references?: StyleReference[];
   products: ProductCard[];
   degraded?: boolean;
@@ -96,13 +100,28 @@ export interface TravelReport {
 
 export type PlanningPhase = "collecting" | "planning" | "done";
 
+export interface XhsQueryDebugEntry {
+  trip_date: string;
+  spot: string;
+  profile: Record<string, unknown>;
+  final_query: string;
+  base_tokens: { token: string; rule: string }[];
+  expanded_queries: string[];
+  compile_source: string;
+  filtered_avoid: number;
+  filtered_non_outfit: number;
+  filtered_low_likes: number;
+  notes_kept: number;
+}
+
 export interface PlanningState {
   messages: ChatMessage[];
   trip: Record<string, unknown> | null;
   weather: DailyWeather[];
   outfits: DailyOutfit[];
-  look_images: { date: string; image_url: string; prompt?: string | null }[];
+  look_images: { date: string; image_url: string; spot_name?: string | null; prompt?: string | null }[];
   products: ProductCard[];
+  xhs_query_debug?: XhsQueryDebugEntry[];
   report: TravelReport | null;
   phase: PlanningPhase;
   errors: string[];

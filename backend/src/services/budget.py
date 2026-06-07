@@ -19,6 +19,28 @@ def infer_item_category(keyword: str) -> str:
     return "top"
 
 
+def category_compatible(expected: str, title: str, *, item_text: str = "") -> bool:
+    """Return True when a Taobao title plausibly matches the expected outfit slot.
+
+    The category is inferred from the **title alone** — mixing in ``item_text`` used to
+    let any product (e.g. a 草帽) count as a 下装 whenever the item described a 裙, which
+    broke the strict item↔product mapping. ``item_text`` is only consulted for the narrow
+    dress/连体 cases where the garment legitimately spans top+bottom.
+    """
+    inferred = infer_item_category(title)
+    if inferred == expected:
+        return True
+    # A dress / jumpsuit covers both top and bottom slots.
+    if expected in {"top", "bottom"} and any(
+        token in title for token in ("连衣裙", "连身裙", "连体裤", "连衣裤")
+    ):
+        return True
+    # Outfit explicitly calls for a skirt and the product is a skirt (not footwear).
+    if expected == "bottom" and "裙" in item_text and "裙" in title and "鞋" not in title:
+        return True
+    return False
+
+
 def budget_for_category(category: str, prefs: TripPreferences) -> float | None:
     bbc = prefs.budget_by_category
     if bbc is not None:

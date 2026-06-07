@@ -12,9 +12,12 @@ from langgraph.graph import END, START, StateGraph
 import src.graph  # noqa: F401 — triggers PlanningState.model_rebuild()
 from src.graph.nodes import (
     assets_node,
+    inspiration_node,
+    itinerary_node,
     report_node,
     stylist_node,
     trip_node,
+    vision_node,
     weather_node,
 )
 from src.graph.report import TravelReport
@@ -58,13 +61,19 @@ def compile_workflow():
     builder = StateGraph(dict)
     builder.add_node("trip", _wrap_node(trip_node))
     builder.add_node("weather", _wrap_node(weather_node))
+    builder.add_node("itinerary", _wrap_node(itinerary_node))
+    builder.add_node("inspiration", _wrap_node(inspiration_node))
+    builder.add_node("vision", _wrap_node(vision_node))
     builder.add_node("stylist", _wrap_node(stylist_node))
     builder.add_node("assets", _wrap_node(assets_node))
     builder.add_node("report", _wrap_node(report_node))
 
     builder.add_edge(START, "trip")
     builder.add_conditional_edges("trip", _route_after_trip, {"weather": "weather", END: END})
-    builder.add_edge("weather", "stylist")
+    builder.add_edge("weather", "itinerary")
+    builder.add_edge("itinerary", "inspiration")
+    builder.add_edge("inspiration", "vision")
+    builder.add_edge("vision", "stylist")
     builder.add_edge("stylist", "assets")
     builder.add_edge("assets", "report")
     builder.add_edge("report", END)

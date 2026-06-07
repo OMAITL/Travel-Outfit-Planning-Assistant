@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from src.config import get_settings
 from src.services.cache import cache_get, cache_set
-from src.tools.justone_client import JustOneApiError, format_justone_error, justone_get
+from src.tools.justone_client import JustOneApiError, justone_get
 from src.tools.onebound import normalize_taobao_item
 
 SEARCH_PATH = "/api/taobao/search-item-list/v1"
@@ -57,6 +58,96 @@ def _extract_raw_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _resolve_search_price(raw: dict[str, Any]) -> float | None:
+    """Extract sale price from Just One search-item-list v1 item fields."""
+    for key in (
+        "priceZKYuanDouble",
+        "discntPriceYuan",
+        "priceYuanDouble",
+        "promotion_price",
+        "couponPrice",
+        "price",
+        "zkFinalPrice",
+        "viewPrice",
+    ):
+        value = raw.get(key)
+        if value is not None and value != "":
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                continue
+    for key, divisor in (("priceZKFen", 100), ("priceFen", 100)):
+        value = raw.get(key)
+        if value is not None and value != "":
+            try:
+                return float(value) / divisor
+            except (TypeError, ValueError):
+                continue
+    price_show = raw.get("priceShow")
+    if isinstance(price_show, dict) and price_show.get("price") is not None:
+        try:
+            return float(price_show["price"])
+        except (TypeError, ValueError):
+            pass
+    return None
+
+
+def _resolve_search_pic(raw: dict[str, Any]) -> str:
+    """Prefer relative picUrl — picUrlFull often points at broken g.search.alicdn.com."""
+    for key in (
+        "picUrl",
+        "pic_url",
+        "pic",
+        "mainImageUrl",
+        "mainPic",
+        "image",
+        "img",
+        "picUrlFull",
+        "thumbnail",
+    ):
+        value = raw.get(key)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _parse_order_pay_uv(value: object) -> float:
+    """Parse Just One orderPayUV like '1000+', '1万+', '少于100'."""
+    if value is None or value == "":
+        return 0.0
+    text = str(value).strip().replace(",", "")
+    if not text:
+        return 0.0
+    if "少于" in text or "小于" in text:
+        return 50.0
+    multiplier = 1.0
+    if "万" in text:
+        multiplier = 10000.0
+        text = text.replace("万", "")
+    text = text.replace("+", "").replace("人", "").strip()
+    match = re.search(r"(\d+(?:\.\d+)?)", text)
+    if not match:
+        return 0.0
+    try:
+        return float(match.group(1)) * multiplier
+    except ValueError:
+        return 0.0
+
+
+def _parse_comment_count(value: object) -> float:
+    if value is None or value == "":
+        return 0.0
+    text = str(value).strip().replace(",", "")
+    if "万" in text:
+        match = re.search(r"(\d+(?:\.\d+)?)", text)
+        if match:
+            return float(match.group(1)) * 10000.0
+    match = re.search(r"(\d+)", text)
+    if match:
+        return float(match.group(1))
+    return 0.0
+
+
 def _map_item(raw: dict[str, Any]) -> dict[str, Any]:
     num_iid = (
         raw.get("num_iid")
@@ -65,27 +156,15 @@ def _map_item(raw: dict[str, Any]) -> dict[str, Any]:
         or raw.get("id")
         or raw.get("nid")
     )
-    title = raw.get("title") or raw.get("itemTitle") or raw.get("name") or ""
-    pic = (
-        raw.get("pic_url")
-        or raw.get("pic")
-        or raw.get("mainImageUrl")
-        or raw.get("mainPic")
-        or raw.get("pic_path")
-        or raw.get("image")
-        or raw.get("img")
+    title = (
+        raw.get("title")
+        or raw.get("itemName")
+        or raw.get("itemTitle")
+        or raw.get("name")
         or ""
     )
-    price = (
-        raw.get("promotion_price")
-        or raw.get("couponPrice")
-        or raw.get("price")
-        or raw.get("zkFinalPrice")
-        or raw.get("viewPrice")
-        or raw.get("priceShow", {}).get("price")
-        if isinstance(raw.get("priceShow"), dict)
-        else None
-    )
+    pic = _resolve_search_pic(raw)
+    price = _resolve_search_price(raw)
     detail_url = (
         raw.get("detail_url")
         or raw.get("detailUrl")
@@ -94,6 +173,10 @@ def _map_item(raw: dict[str, Any]) -> dict[str, Any]:
         or raw.get("url")
         or ""
     )
+    sales = raw.get("realSales") or raw.get("volume") or raw.get("sales") or raw.get("sold")
+    order_pay_uv = _parse_order_pay_uv(raw.get("orderPayUV") or raw.get("order_pay_uv"))
+    comment_count = _parse_comment_count(raw.get("commentCount") or raw.get("comment_count"))
+    seller_good_rating = raw.get("sellerGoodrat") or raw.get("seller_goodrat")
     return normalize_taobao_item(
         {
             "title": title,
@@ -102,6 +185,10 @@ def _map_item(raw: dict[str, Any]) -> dict[str, Any]:
             "promotion_price": price,
             "num_iid": num_iid,
             "detail_url": detail_url,
+            "sales": sales,
+            "order_pay_uv": order_pay_uv,
+            "comment_count": comment_count,
+            "seller_good_rating": seller_good_rating,
         }
     )
 
@@ -181,7 +268,8 @@ def search_taobao_items(
     }
     if max_price is not None and max_price > 0:
         params["startPrice"] = "0"
-        params["endPrice"] = str(int(max_price))
+        end = int(max_price) if max_price == int(max_price) else round(max_price, 2)
+        params["endPrice"] = str(end)
 
     try:
         payload = justone_get(
@@ -195,6 +283,26 @@ def search_taobao_items(
         raise
 
     raw_items = _extract_raw_items(payload)
+    if not raw_items and settings.justoneapi_sort == "bid":
+        payload = justone_get(
+            SEARCH_PATH,
+            {**params, "sort": "_sale"},
+            use_cache=False,
+            cache_namespace=None,
+            cache_params=None,
+        )
+        raw_items = _extract_raw_items(payload)
+    if not raw_items and params.get("sort"):
+        fallback_params = {k: v for k, v in params.items() if k != "sort"}
+        payload = justone_get(
+            SEARCH_PATH,
+            fallback_params,
+            use_cache=False,
+            cache_namespace=None,
+            cache_params=None,
+        )
+        raw_items = _extract_raw_items(payload)
+
     items = [_map_item(item) for item in raw_items]
     if use_cache and raw_items:
         cache_set("justoneapi_search", raw_items, **cache_params)

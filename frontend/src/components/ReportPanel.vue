@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import MagazineCardInteractive from "./MagazineCardInteractive.vue";
 import { USE_API } from "@/config";
 import { usePlanningStore } from "@/stores/planning";
 
 const store = usePlanningStore();
+const debugOpen = ref(false);
+const xhsDebugOpen = ref(false);
 
 const report = computed(() => store.state?.report ?? null);
 const cards = computed(() => report.value?.daily_cards ?? []);
@@ -12,6 +14,27 @@ const selectedCard = computed(() => cards.value[store.selectedDayIndex] ?? null)
 const showDemo = computed(
   () => store.demoReportActive || !report.value?.daily_cards?.length,
 );
+
+const shoppingTrace = computed(() =>
+  (store.state?.trace ?? []).filter((t) => t.agent === "Shopping"),
+);
+
+const taobaoKeywords = computed(() => {
+  const rows: { keyword: string; detail: string; level: string }[] = [];
+  for (const event of shoppingTrace.value) {
+    const msg = event.message;
+    if (msg.startsWith("Taobao API:")) continue;
+    const hitMatch = msg.match(/via「(.+?)」/);
+    const missMatch = msg.match(/0 hits for「(.+?)」/);
+    const keyword = hitMatch?.[1] ?? missMatch?.[1];
+    if (!keyword) continue;
+    if (rows.some((r) => r.detail === msg)) continue;
+    rows.push({ keyword, detail: msg, level: event.level ?? "info" });
+  }
+  return rows;
+});
+
+const xhsQueryDebug = computed(() => store.state?.xhs_query_debug ?? []);
 
 const badgeStyle = computed(() =>
   showDemo.value
@@ -88,17 +111,30 @@ function onDayClick(index: number, e: MouseEvent) {
             <div class="wd">{{ d.weekday }}</div>
             <div class="temp">{{ d.temp }}</div>
             <div class="day-spot-row">
-              <span v-for="sid in d.spotIds" :key="sid" class="spot-chip-sm">
-                {{ store.shortSpotLabel(store.getSpotById(sid)?.name ?? sid) }}
-                <button
-                  v-if="store.editItinerary && showDemo"
-                  type="button"
-                  class="chip-rm"
-                  @click.stop="store.removeDaySpot(i, sid)"
-                >
-                  ×
-                </button>
-              </span>
+              <template v-if="d.morningId || d.afternoonId || d.eveningId">
+                <span v-if="d.morningId" class="spot-chip-sm slot-am">
+                  上午 {{ store.shortSpotLabel(store.getSpotById(d.morningId)?.name ?? d.morningId) }}
+                </span>
+                <span v-if="d.afternoonId" class="spot-chip-sm slot-pm">
+                  下午 {{ store.shortSpotLabel(store.getSpotById(d.afternoonId)?.name ?? d.afternoonId) }}
+                </span>
+                <span v-if="d.eveningId" class="spot-chip-sm slot-ev">
+                  晚间 {{ store.shortSpotLabel(store.getSpotById(d.eveningId)?.name ?? d.eveningId) }}
+                </span>
+              </template>
+              <template v-else>
+                <span v-for="sid in d.spotIds" :key="sid" class="spot-chip-sm">
+                  {{ store.shortSpotLabel(store.getSpotById(sid)?.name ?? sid) }}
+                  <button
+                    v-if="store.editItinerary && showDemo"
+                    type="button"
+                    class="chip-rm"
+                    @click.stop="store.removeDaySpot(i, sid)"
+                  >
+                    ×
+                  </button>
+                </span>
+              </template>
               <button
                 v-if="store.editItinerary && showDemo"
                 type="button"
@@ -131,5 +167,52 @@ function onDayClick(index: number, e: MouseEvent) {
       填写左侧表单并点击「开始规划穿搭」连接后端生成报告
     </p>
     <p v-else-if="report?.disclaimer" class="footer-note">{{ report.disclaimer }}</p>
+
+    <details
+      v-if="USE_API && xhsQueryDebug.length"
+      class="shopping-debug query-debug"
+      :open="xhsDebugOpen"
+      @toggle="xhsDebugOpen = ($event.target as HTMLDetailsElement).open"
+    >
+      <summary>小红书搜索 Query Debug（{{ xhsQueryDebug.length }} 条）</summary>
+      <ul>
+        <li v-for="(row, i) in xhsQueryDebug" :key="i">
+          <strong>{{ row.trip_date }} · {{ row.spot }}</strong>
+          <span class="shopping-debug-detail">搜索词：{{ row.final_query }}</span>
+          <span class="shopping-debug-detail">
+            规则：
+            <span v-for="(tok, j) in row.base_tokens" :key="j">
+              {{ tok.rule }}「{{ tok.token }}」<span v-if="j < row.base_tokens.length - 1"> · </span>
+            </span>
+          </span>
+          <span v-if="row.expanded_queries.length" class="shopping-debug-detail">
+            LLM 扩展：{{ row.expanded_queries.join("；") }}
+          </span>
+          <span class="shopping-debug-detail">
+            雷点过滤 {{ row.filtered_avoid }} · 非穿搭 {{ row.filtered_non_outfit }} ·
+            低赞 {{ row.filtered_low_likes }} · 保留 {{ row.notes_kept }} 条
+          </span>
+        </li>
+      </ul>
+      <p class="shopping-debug-hint">
+        由 Outfit Query Compiler 生成：代码规则编译搜索词，结果按穿搭雷点规则过滤。
+      </p>
+    </details>
+
+    <details
+      v-if="USE_API && taobaoKeywords.length"
+      class="shopping-debug"
+      :open="debugOpen"
+      @toggle="debugOpen = ($event.target as HTMLDetailsElement).open"
+    >
+      <summary>淘宝搜索关键词（{{ taobaoKeywords.length }} 条）</summary>
+      <ul>
+        <li v-for="(row, i) in taobaoKeywords" :key="i" :class="row.level">
+          <strong>{{ row.keyword }}</strong>
+          <span class="shopping-debug-detail">{{ row.detail }}</span>
+        </li>
+      </ul>
+      <p class="shopping-debug-hint">淘宝 API 由后端调用，浏览器 Network 里只能看到一条 <code>plan</code> 请求。</p>
+    </details>
   </section>
 </template>

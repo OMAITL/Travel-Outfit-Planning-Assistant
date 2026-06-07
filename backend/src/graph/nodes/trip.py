@@ -63,6 +63,7 @@ def trip_node(state: PlanningState, *, llm=None) -> PlanningState:
             HumanMessage(content=user_content),
         ],
         retries=1,
+        operation="trip_extract",
     )
 
     if not extraction.is_complete or not all(

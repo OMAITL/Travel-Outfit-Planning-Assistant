@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import type { DailyReportCard, ProductCard } from "@/api/types";
+import type { DailyReportCard, ProductCard, ProductItemGroup } from "@/api/types";
 import { DEMO_PRODUCTS, type ProductCategory } from "@/data/demoReport";
 import { usePlanningStore } from "@/stores/planning";
-import { formatMd, parseOutfitItems, weatherLine, weekdayLabel } from "@/utils/format";
+import {
+  formatMd,
+  outfitLabelToCategory,
+  parseOutfitItems,
+  scoreProductTitleMatch,
+  splitCompoundItemText,
+  weatherLine,
+  weekdayLabel,
+} from "@/utils/format";
+import { proxiedImageUrl } from "@/utils/proxyImage";
 
 const props = defineProps<{
   card?: DailyReportCard | null;
@@ -17,32 +26,51 @@ const router = useRouter();
 const tab = ref<"summary" | "products">("summary");
 const sceneId = ref("");
 const productCat = ref<string>("");
+const brokenImages = ref<Set<string>>(new Set());
+
+function productImageKey(product: ProductCard, index: number): string {
+  return productKey(product) || `${index}`;
+}
+
+function onProductImageError(key: string) {
+  brokenImages.value = new Set([...brokenImages.value, key]);
+}
+
+const MAX_PRODUCTS_PER_CAT = 3;
+
+const CATEGORY_ORDER = ["top", "bottom", "shoes", "acc"] as const;
+const CATEGORY_LABELS: Record<string, string> = {
+  top: "上装",
+  bottom: "下装",
+  shoes: "鞋",
+  acc: "配饰",
+};
+
+function groupCategory(group: ProductItemGroup): string {
+  return group.category || group.id.split("-")[0] || "top";
+}
 
 const productGroups = computed(() => {
   if (props.card?.product_groups?.length) return props.card.product_groups;
   return [];
 });
 
-const activeGroup = computed(() => {
-  const groups = productGroups.value;
-  if (!groups.length) return null;
-  if (productCat.value) {
-    return groups.find((g) => g.id === productCat.value) ?? groups[0];
+const categoryKeys = computed(() => {
+  if (productGroups.value.length) {
+    const seen = new Set<string>();
+    for (const group of productGroups.value) {
+      seen.add(groupCategory(group));
+    }
+    return CATEGORY_ORDER.filter((cat) => seen.has(cat));
   }
-  return groups[0];
+  return ["top", "bottom", "shoes", "acc"];
 });
 
-watch(
-  productGroups,
-  (groups) => {
-    if (groups.length && !groups.some((g) => g.id === productCat.value)) {
-      productCat.value = groups[0].id;
-    }
-  },
-  { immediate: true },
-);
-
-const MAX_PRODUCTS_PER_CAT = 3;
+interface ProductSection {
+  id: string;
+  itemText: string;
+  products: ProductCard[];
+}
 
 function inferProductCategory(title: string): ProductCategory {
   if (/鞋|靴|凉鞋|拖鞋|帆布鞋|运动鞋/.test(title)) return "shoes";
@@ -51,21 +79,159 @@ function inferProductCategory(title: string): ProductCategory {
   return "top";
 }
 
-const products = computed((): ProductCard[] => {
-  if (activeGroup.value?.products?.length) {
-    return activeGroup.value.products.slice(0, MAX_PRODUCTS_PER_CAT);
+function productKey(product: ProductCard): string {
+  return product.num_iid ?? product.detail_url ?? product.title;
+}
+
+function dedupeProducts(products: ProductCard[]): ProductCard[] {
+  const seen = new Set<string>();
+  const unique: ProductCard[] = [];
+  for (const product of products) {
+    const key = productKey(product);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(product);
   }
-  if (props.card?.products?.length) {
-    const legacyCat = (productCat.value.split("-")[0] || "top") as ProductCategory;
-    return props.card.products
-      .filter((p) => (p.category ?? inferProductCategory(p.title)) === legacyCat)
-      .slice(0, MAX_PRODUCTS_PER_CAT);
+  return unique;
+}
+
+function categoryProducts(cat: string): ProductCard[] {
+  const fromGroups = productGroups.value
+    .filter((group) => groupCategory(group) === cat)
+    .flatMap((group) => group.products);
+  const fromCard =
+    props.card?.products?.filter(
+      (product) => (product.category ?? inferProductCategory(product.title)) === cat,
+    ) ?? [];
+  return dedupeProducts([...fromGroups, ...fromCard]);
+}
+
+function categoryItemTexts(cat: string): string[] {
+  const groups = productGroups.value.filter((group) => groupCategory(group) === cat);
+  if (groups.length) {
+    const texts: string[] = [];
+    for (const group of groups) {
+      for (const part of splitCompoundItemText(group.item_text)) {
+        if (!texts.includes(part)) texts.push(part);
+      }
+    }
+    return texts;
   }
-  // Live report but no products — do not show demo placeholders (no pic/link)
-  if (props.card?.outfit) return [];
-  const demoKey = (productCat.value.split("-")[0] || "top") as ProductCategory;
-  return DEMO_PRODUCTS[demoKey]?.slice(0, MAX_PRODUCTS_PER_CAT) ?? [];
+
+  const outfitItem = items.value.find((item) => outfitLabelToCategory(item.label) === cat);
+  if (!outfitItem) return [];
+  return splitCompoundItemText(outfitItem.text);
+}
+
+function pickProductsForItem(itemText: string, pool: ProductCard[], used: Set<string>): ProductCard[] {
+  const matched: ProductCard[] = [];
+
+  for (const product of pool) {
+    const key = productKey(product);
+    if (used.has(key)) continue;
+    const tagged = (product.item_text || "").trim();
+    if (
+      tagged &&
+      (tagged === itemText || tagged.includes(itemText) || itemText.includes(tagged))
+    ) {
+      matched.push(product);
+      used.add(key);
+      if (matched.length >= MAX_PRODUCTS_PER_CAT) return matched;
+    }
+  }
+
+  const ranked = pool
+    .filter((product) => !used.has(productKey(product)))
+    .map((product) => ({ product, score: scoreProductTitleMatch(product.title, itemText) }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  for (const row of ranked) {
+    matched.push(row.product);
+    used.add(productKey(row.product));
+    if (matched.length >= MAX_PRODUCTS_PER_CAT) break;
+  }
+
+  return matched;
+}
+
+function buildCategorySections(cat: string, pool: ProductCard[], itemTexts: string[]): ProductSection[] {
+  if (itemTexts.length <= 1) {
+    const demoProducts =
+      !pool.length && !props.card?.outfit
+        ? (DEMO_PRODUCTS[cat as ProductCategory]?.slice(0, MAX_PRODUCTS_PER_CAT) ?? [])
+        : pool.slice(0, MAX_PRODUCTS_PER_CAT);
+    return [
+      {
+        id: `${cat}-0`,
+        itemText: itemTexts[0] ?? "",
+        products: demoProducts,
+      },
+    ];
+  }
+
+  const used = new Set<string>();
+  return itemTexts.map((itemText, index) => ({
+    id: `${cat}-${index}`,
+    itemText,
+    products: pickProductsForItem(itemText, pool, used),
+  }));
+}
+
+function sectionsFromProductGroups(cat: string): ProductSection[] {
+  const groups = productGroups.value.filter((group) => groupCategory(group) === cat);
+  const sections: ProductSection[] = [];
+
+  for (const group of groups) {
+    const parts = splitCompoundItemText(group.item_text);
+    if (parts.length <= 1) {
+      sections.push({
+        id: group.id,
+        itemText: group.item_text,
+        products: group.products.slice(0, MAX_PRODUCTS_PER_CAT),
+      });
+      continue;
+    }
+
+    const used = new Set<string>();
+    for (const [index, part] of parts.entries()) {
+      sections.push({
+        id: `${group.id}-${index}`,
+        itemText: part,
+        products: pickProductsForItem(part, group.products, used),
+      });
+    }
+  }
+
+  return sections;
+}
+
+const activeCategorySections = computed((): ProductSection[] => {
+  const cat = productCat.value;
+
+  if (productGroups.value.length) {
+    const sections = sectionsFromProductGroups(cat);
+    if (sections.length) return sections;
+  }
+
+  const itemTexts = categoryItemTexts(cat);
+  if (!itemTexts.length) return [];
+  return buildCategorySections(cat, categoryProducts(cat), itemTexts);
 });
+
+watch(
+  categoryKeys,
+  (cats) => {
+    if (cats.length && !cats.includes(productCat.value as (typeof CATEGORY_ORDER)[number])) {
+      productCat.value = cats[0];
+    }
+  },
+  { immediate: true },
+);
+
+const hasCategoryProducts = computed(() =>
+  activeCategorySections.value.some((section) => section.products.length > 0),
+);
 
 const productSourceHint = computed(() => {
   if (!props.card?.outfit) return "";
@@ -86,22 +252,46 @@ const productSourceHint = computed(() => {
   if (oneboundErr) {
     return "万邦 API 调用次数已用尽，无法获取淘宝商品图与链接。请登录 open.onebound.cn 充值后重新规划。";
   }
-  if (!products.value.length && !productGroups.value.some((g) => g.products.length)) {
+  if (!hasCategoryProducts.value && !productGroups.value.some((group) => group.products.length)) {
+    const quotaTrace = (store.state?.trace ?? []).some(
+      (t) => t.agent === "Shopping" && t.message.includes("quota reached"),
+    );
+    if (quotaTrace) {
+      if (typeof console !== "undefined") {
+        console.warn("[Shopping] Taobao API quota reached — product links cleared");
+      }
+      return "淘宝 API 配额已用尽，商品链接未生成。请查看后端控制台日志或提高 JUSTONEAPI_MAX_CALLS_PER_RUN。";
+    }
     return "暂无符合预算的淘宝商品，可尝试提高分类预算或稍后重试。";
   }
   return "";
 });
 
-const catLabels = computed(() => {
-  if (productGroups.value.length) {
-    return productGroups.value.map((g) => ({ key: g.id, label: g.label }));
+function categoryTabLabel(cat: string): string {
+  const base = CATEGORY_LABELS[cat] ?? cat;
+  const groups = productGroups.value.filter((group) => groupCategory(group) === cat);
+  if (groups.length) {
+    const combined = groups.map((group) => group.item_text).join("、");
+    const short = combined.length > 14 ? `${combined.slice(0, 14)}…` : combined;
+    return `${base}·${short}`;
   }
-  return [
-    { key: "top", label: "上装" },
-    { key: "bottom", label: "下装" },
-    { key: "shoes", label: "鞋" },
-    { key: "acc", label: "配饰" },
-  ];
+
+  const outfitItem = items.value.find((item) => outfitLabelToCategory(item.label) === cat);
+  if (outfitItem) {
+    const short =
+      outfitItem.text.length > 14 ? `${outfitItem.text.slice(0, 14)}…` : outfitItem.text;
+    return `${base}·${short}`;
+  }
+
+  if (props.card?.outfit) return base;
+  return base;
+}
+
+const catLabels = computed(() => {
+  return categoryKeys.value.map((cat) => ({
+    key: cat,
+    label: categoryTabLabel(cat),
+  }));
 });
 
 function budgetLabel(p: ProductCard): string {
@@ -160,10 +350,39 @@ const scores = computed(() => [
 
 const styleReferences = computed(() => props.card?.style_references ?? []);
 
+const xhsSourceHint = computed(() => {
+  if (!props.card?.outfit) return "";
+  const refs = styleReferences.value;
+  const traces = store.state?.trace ?? [];
+  const inspirationWarn = traces.some(
+    (t) =>
+      t.agent === "Inspiration" &&
+      (t.message.includes("cleared for UI") || t.message.includes("only")),
+  );
+  const xhsErr = (store.state?.errors ?? []).some(
+    (e) =>
+      e.includes("303") ||
+      e.includes("601") ||
+      e.includes("Just One API") ||
+      e.includes("配额"),
+  );
+  if (xhsErr || inspirationWarn || (refs.length > 0 && refs.length < 3)) {
+    if (typeof console !== "undefined") {
+      console.warn("[XHS] 参考笔记未凑满3条", { count: refs.length, xhsErr, inspirationWarn });
+    }
+    return "小红书参考笔记未凑满 3 条（API 配额或过滤限制），请查看后端控制台日志后重试。";
+  }
+  if (!refs.length && props.card?.outfit) {
+    return "暂无小红书穿搭参考（未凑满 3 条或 API 配额不足）。";
+  }
+  return "";
+});
+
 const sceneSpots = computed(() => {
   if (isLive.value && props.card?.spot_names?.length) {
     return props.card.spot_names.map((name, i) => ({
       id: `live-${i}`,
+      spotName: name,
       label: store.shortSpotLabel(name),
       sceneSub: `背景：${name}`,
       sceneLabel: `AI 生成 · ${props.destination || ""} · ${name}`,
@@ -174,6 +393,7 @@ const sceneSpots = computed(() => {
     if (d?.sceneSpots.length) {
       return d.sceneSpots.map((label, i) => ({
         id: `sync-${i}`,
+        spotName: label,
         label,
         sceneSub: `背景：${label}`,
         sceneLabel: `AI 生成 · ${props.destination || ""} · ${label}`,
@@ -182,6 +402,7 @@ const sceneSpots = computed(() => {
     return [
       {
         id: "live",
+        spotName: props.destination || "旅行",
         label: props.destination || "旅行",
         sceneSub: "",
         sceneLabel: `AI 生成 · ${props.destination || ""}`,
@@ -192,6 +413,7 @@ const sceneSpots = computed(() => {
   if (!d) return [];
   return d.sceneSpots.map((label, i) => ({
     id: `scene-${i}`,
+    spotName: label === "洱海廊道" ? "洱海生态廊道" : label,
     label,
     sceneSub: `背景：${label === "洱海廊道" ? "洱海生态廊道" : label}`,
     sceneLabel: `AI 生成 · 女 · 休闲风 · ${label === "洱海廊道" ? "洱海生态廊道" : label}`,
@@ -202,13 +424,23 @@ const activeScene = computed(
   () => sceneSpots.value.find((s) => s.id === sceneId.value) ?? sceneSpots.value[0],
 );
 
+const activeLookImageUrl = computed(() => {
+  const card = props.card;
+  if (!card) return null;
+  const spotName = activeScene.value?.spotName;
+  if (spotName && card.look_images_by_spot?.[spotName]) {
+    return card.look_images_by_spot[spotName];
+  }
+  return card.look_image_url;
+});
+
 watch(
   () => props.demoDayIndex ?? store.selectedDayIndex,
   () => {
     const spots = sceneSpots.value;
     sceneId.value = spots[0]?.id ?? "";
     tab.value = "summary";
-    productCat.value = productGroups.value[0]?.id ?? "top";
+    productCat.value = categoryKeys.value[0] ?? "top";
   },
   { immediate: true },
 );
@@ -256,30 +488,22 @@ function goTryon() {
               </div>
             </div>
           </div>
-          <div v-if="styleReferences.length" class="section">
+          <div v-if="styleReferences.length || xhsSourceHint" class="section">
             <div class="section-title">小红书穿搭参考</div>
-            <div class="xhs-ref-grid">
-              <a
-                v-for="ref in styleReferences"
-                :key="ref.note_id"
-                class="xhs-ref-card"
-                :href="ref.note_url || '#'"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  v-if="ref.cover_url"
-                  :src="ref.cover_url"
-                  :alt="ref.title || '穿搭参考'"
-                  loading="lazy"
-                  referrerpolicy="no-referrer"
-                />
-                <div class="xhs-ref-body">
-                  <div class="xhs-ref-title">{{ ref.title || "小红书笔记" }}</div>
-                  <div v-if="ref.user_name" class="xhs-ref-meta">@{{ ref.user_name }}</div>
-                </div>
-              </a>
-            </div>
+            <ul v-if="styleReferences.length" class="xhs-ref-list">
+              <li v-for="ref in styleReferences" :key="ref.note_id">
+                <a
+                  class="xhs-ref-link"
+                  :href="ref.note_url || '#'"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {{ ref.title || "小红书笔记" }}
+                  <span v-if="ref.user_name"> · @{{ ref.user_name }}</span>
+                </a>
+              </li>
+            </ul>
+            <p v-else class="xhs-empty-hint">{{ xhsSourceHint }}</p>
           </div>
           <div class="scores">
             <span v-for="(s, i) in scores" :key="i">{{ s }}</span>
@@ -299,7 +523,11 @@ function goTryon() {
             </button>
           </div>
           <div class="ai-frame">
-            <img v-if="card?.look_image_url" :src="card.look_image_url" alt="穿搭效果图" />
+            <img
+              v-if="activeLookImageUrl"
+              :src="proxiedImageUrl(activeLookImageUrl)"
+              alt="穿搭效果图"
+            />
             <div v-else class="placeholder">
               <div class="icon">📸</div>
               <p>今日穿搭预览</p>
@@ -328,40 +556,58 @@ function goTryon() {
           {{ c.label }}
         </button>
       </div>
-      <p v-if="activeGroup?.item_text" class="product-item-hint">
-        对应单品：{{ activeGroup.item_text }}
-      </p>
-      <div class="product-grid">
-        <a
-          v-for="(p, i) in products"
-          :key="p.num_iid ?? i"
-          class="p-card"
-          :href="p.detail_url || '#'"
-          target="_blank"
-          rel="noopener noreferrer"
+      <div class="product-item-list">
+        <div
+          v-for="(section, sectionIndex) in activeCategorySections"
+          :key="section.id"
+          class="product-item-section"
         >
-          <div class="img">
-            <img
-              v-if="p.pic_url"
-              :src="p.pic_url"
-              :alt="p.title"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            />
-            <span v-else class="img-fallback">🛍️</span>
-          </div>
-          <div class="body">
-            <div class="title">{{ p.title }}</div>
-            <div class="price">¥{{ p.price }}</div>
-            <div class="budget" :class="{ over: p.within_budget === false }">
-              {{ budgetLabel(p) }}
+        <div class="product-item-head">
+          <span
+            class="product-item-badge"
+            :class="sectionIndex === 0 ? 'primary' : 'secondary'"
+          >
+            {{ sectionIndex === 0 ? "当前单品" : "其他单品" }}
+          </span>
+          <span class="product-item-name">
+            对应单品 {{ sectionIndex + 1 }}：{{ section.itemText }}
+          </span>
+        </div>
+        <div v-if="section.products.length" class="product-grid">
+          <a
+            v-for="(p, i) in section.products"
+            :key="p.num_iid ?? `${section.id}-${i}`"
+            class="p-card"
+            :href="p.detail_url || '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <div class="img">
+              <img
+                v-if="p.pic_url && !brokenImages.has(productImageKey(p, i))"
+                :src="proxiedImageUrl(p.pic_url)"
+                alt=""
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @error="onProductImageError(productImageKey(p, i))"
+              />
+              <span v-else class="img-fallback">🛍️</span>
             </div>
-            <span class="cta">去淘宝购买</span>
-          </div>
-        </a>
+            <div class="body">
+              <div class="title">{{ p.title }}</div>
+              <div class="price">¥{{ p.price }}</div>
+              <div class="budget" :class="{ over: p.within_budget === false }">
+                {{ budgetLabel(p) }}
+              </div>
+              <span class="cta">去淘宝购买</span>
+            </div>
+          </a>
+        </div>
+        <p v-else class="product-item-empty">该单品暂无匹配商品</p>
+        </div>
       </div>
       <p v-if="productSourceHint" class="products-empty products-api-hint">{{ productSourceHint }}</p>
-      <p v-else-if="!products.length" class="products-empty">该品类暂无匹配商品</p>
+      <p v-else-if="!hasCategoryProducts" class="products-empty">该品类暂无匹配商品</p>
     </div>
   </article>
 </template>

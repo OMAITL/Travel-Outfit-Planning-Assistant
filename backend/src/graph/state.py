@@ -157,6 +157,9 @@ class DayItinerary(BaseModel):
 
     date: date
     spot_names: list[str] = Field(default_factory=list)
+    morning: str | None = Field(default=None, description="Morning POI")
+    afternoon: str | None = Field(default=None, description="Afternoon POI")
+    evening: str | None = Field(default=None, description="Optional evening POI")
 
 
 class ChatMessage(BaseModel):
@@ -167,6 +170,10 @@ class ChatMessage(BaseModel):
 class OutfitLookImage(BaseModel):
     date: date
     image_url: str
+    spot_name: str | None = Field(
+        default=None,
+        description="Scenic spot used as the image background; None when only destination is used",
+    )
     prompt: str | None = None
 
 
@@ -176,6 +183,7 @@ class OutfitInspiration(BaseModel):
     trip_date: date
     note_id: str
     title: str = ""
+    desc: str = ""
     cover_url: str = ""
     image_urls: list[str] = Field(default_factory=list)
     note_url: str = ""
@@ -184,10 +192,63 @@ class OutfitInspiration(BaseModel):
     search_keyword: str | None = None
 
 
+class NoteOutfitAnalysis(BaseModel):
+    """Structured outfit elements extracted from a Xiaohongshu note."""
+
+    note_id: str
+    is_outfit: bool = Field(
+        default=True,
+        description="True only when the note actually shows a wearable outfit (not a guide/pose note)",
+    )
+    style: str = ""
+    top: str = ""
+    bottom: str = ""
+    shoes: str = ""
+    bag: str = ""
+    accessories: str = ""
+    color_palette: str = ""
+    scene_vibe: str = ""
+    photo_style: str = ""
+    image_prompt_en: str = ""
+
+
+class DayOutfitTrend(BaseModel):
+    """Aggregated popular outfit trends for one trip day from XHS references."""
+
+    date: date
+    dominant_style: str = ""
+    top_picks: list[str] = Field(default_factory=list)
+    bottom_picks: list[str] = Field(default_factory=list)
+    shoes_picks: list[str] = Field(default_factory=list)
+    bag_picks: list[str] = Field(default_factory=list)
+    acc_picks: list[str] = Field(default_factory=list)
+    color_palette: str = ""
+    scene_vibe: str = ""
+    photo_style: str = ""
+    editorial_prompt_en: str = ""
+    note_analyses: list[NoteOutfitAnalysis] = Field(default_factory=list)
+
+
 class TraceEvent(BaseModel):
     agent: str
     message: str
     level: str = "info"
+
+
+class XhsQueryDebugEntry(BaseModel):
+    """Outfit Query Compiler debug row (one scenic spot on one trip day)."""
+
+    trip_date: date
+    spot: str
+    profile: dict = Field(default_factory=dict)
+    final_query: str = ""
+    base_tokens: list[dict] = Field(default_factory=list)
+    expanded_queries: list[str] = Field(default_factory=list)
+    compile_source: str = "rule"
+    filtered_avoid: int = 0
+    filtered_non_outfit: int = 0
+    filtered_low_likes: int = 0
+    notes_kept: int = 0
 
 
 class PlanningPhase(StrEnum):
@@ -207,6 +268,11 @@ class PlanningState(BaseModel):
     outfits: list[DailyOutfit] = Field(default_factory=list)
     look_images: list[OutfitLookImage] = Field(default_factory=list)
     outfit_inspirations: list[OutfitInspiration] = Field(default_factory=list)
+    outfit_trends: list[DayOutfitTrend] = Field(default_factory=list)
+    xhs_query_debug: list[XhsQueryDebugEntry] = Field(
+        default_factory=list,
+        description="Outfit Query Compiler debug rows for XHS search",
+    )
     products: list[ProductCard] = Field(default_factory=list)
     report: TravelReport | None = None
     phase: PlanningPhase = PlanningPhase.COLLECTING

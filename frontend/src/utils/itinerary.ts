@@ -1,0 +1,64 @@
+/** User-selected spots only — contiguous half-day blocks (mirrors backend poi_pool.py). */
+
+import type { City } from "@/api/types";
+
+export interface DaySlotPlan {
+  spotIds: string[];
+  morningId?: string;
+  afternoonId?: string;
+  eveningId?: string;
+}
+
+export function buildPoiPoolIds(userSpotIds: string[]): string[] {
+  const pool: string[] = [];
+  const seen = new Set<string>();
+  for (const id of userSpotIds) {
+    if (!id || seen.has(id)) continue;
+    pool.push(id);
+    seen.add(id);
+  }
+  return pool;
+}
+
+function contiguousSlotAssignment(pool: string[], slotCount: number): string[] {
+  if (slotCount <= 0) return [];
+  if (!pool.length) return Array(slotCount).fill("");
+
+  const base = Math.floor(slotCount / pool.length);
+  const extra = slotCount % pool.length;
+  const assigned: string[] = [];
+  pool.forEach((spot, index) => {
+    const block = base + (index < extra ? 1 : 0);
+    for (let i = 0; i < block; i++) assigned.push(spot);
+  });
+  return assigned.slice(0, slotCount);
+}
+
+export function distributePoiPoolIds(pool: string[], dayCount: number): DaySlotPlan[] {
+  if (dayCount <= 0) return [];
+
+  const timeline: Array<{ day: number; period: "morning" | "afternoon" }> = [];
+  for (let day = 0; day < dayCount; day++) {
+    timeline.push({ day, period: "morning" });
+    timeline.push({ day, period: "afternoon" });
+  }
+
+  const assignments = contiguousSlotAssignment(pool, timeline.length);
+  const plans: DaySlotPlan[] = Array.from({ length: dayCount }, () => ({ spotIds: [] }));
+
+  timeline.forEach(({ day, period }, index) => {
+    const spotId = assignments[index];
+    if (!spotId) return;
+    const plan = plans[day];
+    if (period === "morning") plan.morningId = spotId;
+    else plan.afternoonId = spotId;
+    if (!plan.spotIds.includes(spotId)) plan.spotIds.push(spotId);
+  });
+
+  return plans;
+}
+
+export function planAutoItineraryIds(userSpotIds: string[], _city: City, dayCount: number): DaySlotPlan[] {
+  const pool = buildPoiPoolIds(userSpotIds);
+  return distributePoiPoolIds(pool, dayCount);
+}

@@ -43,13 +43,20 @@ class DailyReportCard(BaseModel):
         default_factory=list,
         description="Scenic spots scheduled for this day",
     )
+    morning: str | None = Field(default=None, description="Morning POI")
+    afternoon: str | None = Field(default=None, description="Afternoon POI")
+    evening: str | None = Field(default=None, description="Optional evening POI")
     weather: DailyWeather | None = None
     outfit: DailyOutfit | None = None
     outfit_items: list[OutfitItemView] = Field(default_factory=list)
     product_groups: list[ProductItemGroup] = Field(default_factory=list)
     look_image_url: str | None = Field(
         default=None,
-        description="AI-generated outfit look image URL (Phase 4+)",
+        description="Primary AI look image URL (first spot of the day, backward compatible)",
+    )
+    look_images_by_spot: dict[str, str] = Field(
+        default_factory=dict,
+        description="AI look image URLs keyed by scenic spot name for this day",
     )
     style_references: list[StyleReferenceView] = Field(
         default_factory=list,

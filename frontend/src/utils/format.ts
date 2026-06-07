@@ -65,3 +65,36 @@ export function parseOutfitItems(summary: string): { label: string; text: string
   }
   return items;
 }
+
+/** Split compound descriptions like 宽檐草帽、民族风耳环 into separate pieces. */
+export function splitCompoundItemText(text: string): string[] {
+  const parts = text
+    .split(/[,，、;；+/|｜]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length ? parts : [text.trim()];
+}
+
+const LABEL_TO_CATEGORY: Record<string, string> = {
+  上装: "top",
+  内搭: "top",
+  外套: "top",
+  下装: "bottom",
+  鞋: "shoes",
+  配饰: "acc",
+  包: "acc",
+};
+
+export function outfitLabelToCategory(label: string): string {
+  return LABEL_TO_CATEGORY[label] ?? "top";
+}
+
+export function scoreProductTitleMatch(title: string, itemText: string): number {
+  let score = 0;
+  for (const token of splitCompoundItemText(itemText)) {
+    if (token.length >= 2 && title.includes(token)) {
+      score += token.length;
+    }
+  }
+  return score;
+}
