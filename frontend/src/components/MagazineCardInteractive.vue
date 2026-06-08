@@ -236,33 +236,28 @@ const hasCategoryProducts = computed(() =>
 const productSourceHint = computed(() => {
   if (!props.card?.outfit) return "";
   const errs = store.state?.errors ?? [];
-  const oneboundErr = errs.find(
-    (e) => e.includes("4013") || e.includes("超限") || e.includes("OneBound"),
-  );
-  const justoneErr = errs.find(
+  const apiUnavailable = errs.some(
     (e) =>
+      e.includes("4013") ||
+      e.includes("超限") ||
+      e.includes("OneBound") ||
       e.includes("Just One API") ||
       e.includes("JUSTONE") ||
       e.includes("303") ||
-      e.includes("601"),
+      e.includes("601") ||
+      e.includes("配额"),
   );
-  if (justoneErr) {
-    return "Just One API 配额或余额不足，无法获取淘宝商品。请检查控制台或更换 JUSTONEAPI_TOKEN。";
-  }
-  if (oneboundErr) {
-    return "万邦 API 调用次数已用尽，无法获取淘宝商品图与链接。请登录 open.onebound.cn 充值后重新规划。";
-  }
+  const quotaTrace = (store.state?.trace ?? []).some(
+    (t) => t.agent === "Shopping" && t.message.includes("quota reached"),
+  );
   if (!hasCategoryProducts.value && !productGroups.value.some((group) => group.products.length)) {
-    const quotaTrace = (store.state?.trace ?? []).some(
-      (t) => t.agent === "Shopping" && t.message.includes("quota reached"),
-    );
-    if (quotaTrace) {
+    if (apiUnavailable || quotaTrace) {
       if (typeof console !== "undefined") {
-        console.warn("[Shopping] Taobao API quota reached — product links cleared");
+        console.warn("[Shopping] product links unavailable", { apiUnavailable, quotaTrace, errs });
       }
-      return "淘宝 API 配额已用尽，商品链接未生成。请查看后端控制台日志或提高 JUSTONEAPI_MAX_CALLS_PER_RUN。";
+      return "商品链接暂时无法加载，请稍后重新规划或适当提高预算后再试。";
     }
-    return "暂无符合预算的淘宝商品，可尝试提高分类预算或稍后重试。";
+    return "暂无符合预算的商品推荐，可尝试提高分类预算。";
   }
   return "";
 });
@@ -313,10 +308,38 @@ const headerWeather = computed(() => {
   return demoDay.value?.weather ?? "";
 });
 
-const tips = computed(() => [
-  "昼夜温差大，建议洋葱式叠穿，方便中午脱外套",
-  "可能降雨，备轻便雨衣或防水外套",
-]);
+const tips = computed(() => {
+  if (props.card?.travel_tips?.length) return props.card.travel_tips;
+  if (props.card?.weather) {
+    const w = props.card.weather;
+    const hints: string[] = [];
+    const spread = w.temp_max - w.temp_min;
+    if (w.temp_max >= 30) {
+      hints.push(
+        "☀️ 高温提醒：午间紫外线较强、体感闷热，建议配备墨镜、防晒帽，并随身携带补充水分。",
+      );
+    } else if (w.temp_max >= 28) {
+      hints.push(
+        `🌡️ 体感偏热：最高气温约 ${w.temp_max}°C，推荐轻薄透气面料，午间注意防晒补水。`,
+      );
+    }
+    if (w.temp_min <= 18 && spread >= 10) {
+      hints.push(
+        `🌡️ 温差提醒：早晚温差达 ${Math.round(spread)}°C，上午10点前及晚上8点后体感较凉，外搭的轻薄外套不可少。`,
+      );
+    } else if (spread >= 8 && w.temp_min <= 20) {
+      hints.push(
+        `🌡️ 昼夜温差：当日温差 ${Math.round(spread)}°C，建议洋葱式分层，中午可脱外套、早晚及时添衣。`,
+      );
+    }
+    if (w.condition.includes("雨") || (w.rain_prob ?? 0) >= 40) {
+      hints.push("🌧️ 降雨可能：备轻便雨具或防水外套，路面湿滑请选择防滑鞋。");
+    }
+    if (hints.length) return hints;
+    return [`当日 ${w.temp_min}–${w.temp_max}°C、${w.condition}，根据体感灵活增减衣物`];
+  }
+  return demoDay.value?.tips ?? [];
+});
 
 const reason = computed(() => {
   if (props.card?.outfit?.recommendation_reason) return props.card.outfit.recommendation_reason;
@@ -353,28 +376,27 @@ const styleReferences = computed(() => props.card?.style_references ?? []);
 const xhsSourceHint = computed(() => {
   if (!props.card?.outfit) return "";
   const refs = styleReferences.value;
-  const traces = store.state?.trace ?? [];
-  const inspirationWarn = traces.some(
-    (t) =>
-      t.agent === "Inspiration" &&
-      (t.message.includes("cleared for UI") || t.message.includes("only")),
-  );
-  const xhsErr = (store.state?.errors ?? []).some(
-    (e) =>
-      e.includes("303") ||
-      e.includes("601") ||
-      e.includes("Just One API") ||
-      e.includes("配额"),
-  );
-  if (xhsErr || inspirationWarn || (refs.length > 0 && refs.length < 3)) {
-    if (typeof console !== "undefined") {
-      console.warn("[XHS] 参考笔记未凑满3条", { count: refs.length, xhsErr, inspirationWarn });
+  if (refs.length > 0) {
+    if (refs.length < 3 && typeof console !== "undefined") {
+      console.warn("[XHS] fewer than 3 reference notes", {
+        count: refs.length,
+        trace: store.state?.trace?.filter((t) => t.agent === "Inspiration"),
+      });
     }
-    return "小红书参考笔记未凑满 3 条（API 配额或过滤限制），请查看后端控制台日志后重试。";
+    return "";
   }
-  if (!refs.length && props.card?.outfit) {
-    return "暂无小红书穿搭参考（未凑满 3 条或 API 配额不足）。";
+  if (typeof console !== "undefined") {
+    console.warn("[XHS] no reference notes for this day", {
+      errors: store.state?.errors,
+      trace: store.state?.trace?.filter((t) => t.agent === "Inspiration"),
+    });
   }
+  return "暂未找到匹配的小红书穿搭参考，不影响当日 AI 穿搭推荐。";
+});
+
+const xhsPartialHint = computed(() => {
+  const n = styleReferences.value.length;
+  if (n > 0 && n < 3) return `已精选 ${n} 条高赞穿搭笔记供参考`;
   return "";
 });
 
@@ -503,7 +525,8 @@ function goTryon() {
                 </a>
               </li>
             </ul>
-            <p v-else class="xhs-empty-hint">{{ xhsSourceHint }}</p>
+            <p v-if="xhsPartialHint" class="xhs-partial-hint">{{ xhsPartialHint }}</p>
+            <p v-else-if="xhsSourceHint" class="xhs-empty-hint">{{ xhsSourceHint }}</p>
           </div>
           <div class="scores">
             <span v-for="(s, i) in scores" :key="i">{{ s }}</span>

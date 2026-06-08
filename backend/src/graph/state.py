@@ -160,6 +160,10 @@ class DayItinerary(BaseModel):
     morning: str | None = Field(default=None, description="Morning POI")
     afternoon: str | None = Field(default=None, description="Afternoon POI")
     evening: str | None = Field(default=None, description="Optional evening POI")
+    plan_reason: str | None = Field(
+        default=None,
+        description="AI/rule planner rationale for this day's arrangement",
+    )
 
 
 class ChatMessage(BaseModel):

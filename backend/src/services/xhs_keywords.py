@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from datetime import date
 
+from src.services.body_profile import BodyProfile
 from src.tools.justone_xhs import XhsNoteSummary
 
 _HEIGHT_SHORT_CM = 160
@@ -134,6 +135,7 @@ def spot_outfit_keyword(
     style: str | None = None,
     body_type: str | None = None,
     height_cm: float | None = None,
+    weight_kg: float | None = None,
 ) -> str:
     """
     One XHS query per scenic spot, combining user profile + spot + 穿搭.
@@ -155,7 +157,18 @@ def spot_outfit_keyword(
         parts.append(gender_label)
 
     body_label = body_type_search_label(body_type)
-    if body_label:
+    profile = BodyProfile(
+        height_cm=height_cm,
+        weight_kg=weight_kg,
+        body_type=body_type,
+        gender=gender,
+    )
+    xhs_body = profile.xhs_body_tokens()
+    if xhs_body:
+        for token in xhs_body:
+            if token not in parts:
+                parts.append(token)
+    elif body_label:
         parts.append(body_label)
 
     style_label = style_search_label(style)
@@ -174,6 +187,7 @@ def build_xhs_search_keywords(
     gender: str | None = None,
     body_type: str | None = None,
     height_cm: float | None = None,
+    weight_kg: float | None = None,
     trip_date: date | None = None,
     max_keywords: int = 4,
 ) -> list[str]:
@@ -186,6 +200,7 @@ def build_xhs_search_keywords(
         gender=gender,
         body_type=body_type,
         height_cm=height_cm,
+        weight_kg=weight_kg,
     )
     spots = [s.strip() for s in (spot_names or []) if s.strip()]
     compiler = OutfitQueryCompiler()

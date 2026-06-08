@@ -5,6 +5,12 @@ from __future__ import annotations
 import re
 
 from src.graph.state import DailyWeather, TripPreferences
+from src.services.travel_tips import build_daily_travel_tips, weather_travel_tips
+
+__all__ = [
+    "build_daily_travel_tips",
+    "weather_travel_tips",
+]
 
 COLOR_KEYWORDS: dict[str, str] = {
     "白": "#f8fafc",
@@ -27,33 +33,6 @@ COLOR_KEYWORDS: dict[str, str] = {
 
 def _condition_text(condition) -> str:
     return condition.value if hasattr(condition, "value") else str(condition)
-
-
-def weather_travel_tips(weather: DailyWeather) -> list[str]:
-    """Generate practical travel reminders from daily forecast."""
-    tips: list[str] = []
-    spread = weather.temp_max - weather.temp_min
-    condition = _condition_text(weather.condition)
-
-    if spread >= 8:
-        tips.append("昼夜温差大，建议洋葱式分层，早晚加外套")
-    if weather.temp_max >= 32:
-        tips.append("白天高温，注意防晒、补水，选择透气面料")
-    elif weather.temp_max >= 28:
-        tips.append("气温偏高，推荐轻薄透气材质")
-    if weather.temp_min <= 5:
-        tips.append("夜间偏冷，需保暖内搭或厚外套")
-    elif weather.temp_min <= 12:
-        tips.append("早晚凉意明显，建议携带薄外套")
-
-    if "雨" in condition or (weather.rain_prob or 0) >= 40:
-        tips.append("可能有降雨，备轻便雨具或防水外套")
-    if "晴" in condition and weather.temp_max >= 24:
-        tips.append("晴日紫外线强，帽子/墨镜/防晒衣不可少")
-    if "雪" in condition:
-        tips.append("降雪天气，防滑保暖鞋靴与防水外层必备")
-
-    return tips
 
 
 def weather_outfit_impact(weather: DailyWeather, outfit_summary: str | None = None) -> str:
@@ -183,12 +162,131 @@ def is_purchasable_item_text(text: str) -> bool:
     return not any(hint in cleaned for hint in _NON_PURCHASABLE_HINTS)
 
 
+def _split_outside_parens(text: str) -> list[str]:
+    """Split on list delimiters only when not inside （） or ()."""
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    delimiters = "、，,;；+/＋|｜"
+    for char in text:
+        if char in "（(":
+            depth += 1
+            current.append(char)
+        elif char in "）)":
+            depth = max(0, depth - 1)
+            current.append(char)
+        elif char in delimiters and depth == 0:
+            segment = "".join(current).strip()
+            if segment:
+                parts.append(segment)
+            current = []
+        else:
+            current.append(char)
+    segment = "".join(current).strip()
+    if segment:
+        parts.append(segment)
+    return parts
+
+
+def _looks_like_paren_fragment(part: str) -> bool:
+    """True when a segment is a broken parenthetical shard, not a real item."""
+    stripped = part.strip()
+    if not stripped:
+        return True
+    if stripped.startswith(("（", "(")) and not stripped.endswith(("）", ")")):
+        return True
+    if stripped.endswith(("）", ")")) and not stripped.startswith(("（", "(")):
+        return True
+    if len(stripped) <= 4 and stripped in {"短袖", "露脐", "圆领", "系带", "低帮"}:
+        return True
+    return False
+
+
 def split_compound_item_text(text: str) -> list[str]:
     """Split accessory lists like 宽檐草帽、民族风耳环、草编手提包 into separate slots."""
-    parts = re.split(r"[,，、;；+/＋|｜]+", text.strip())
-    cleaned = [part.strip() for part in parts if part.strip()]
-    cleaned = [part for part in cleaned if part.lower() not in _SKIP_ITEM_TEXT]
-    return cleaned or [text.strip()]
+    text = text.strip()
+    if not text:
+        return []
+
+    parts = _split_outside_parens(text)
+    cleaned = [part for part in parts if part and part.lower() not in _SKIP_ITEM_TEXT]
+    if len(cleaned) <= 1:
+        return [text]
+    if any(_looks_like_paren_fragment(part) for part in cleaned):
+        return [text]
+    return cleaned
+
+
+# Parenthetical / inline phrases for AI image prompts only — strip from UI & Taobao search.
+_PROMPT_PAREN_HINTS = (
+    "垂坠感",
+    "前短后长",
+    "设计感",
+    "氛围感",
+    "质感",
+    "显瘦",
+    "遮胯",
+    "配浅灰袜",
+    "菱格纹",
+    "金属链",
+    # Length & fit cues for image generation — not useful on Taobao
+    "及小腿",
+    "及膝",
+    "及踝",
+    "及腰",
+    "及大腿",
+    "系带",
+    "系带收腰",
+    "绑带",
+    "抽绳",
+    "开衩",
+    "不规则下摆",
+    "层叠",
+    "层次感",
+)
+
+
+def _paren_inner_is_prompt_only(inner: str) -> bool:
+    """True when parenthetical content is image-prompt metadata, not a product SKU attribute."""
+    if any(hint in inner for hint in _PROMPT_PAREN_HINTS):
+        return True
+    stripped = inner.strip()
+    if re.match(r"^及?(小腿|膝|踝|腰|大腿)$", stripped):
+        return True
+    if re.match(r"^系带(?:收腰)?$", stripped):
+        return True
+    return False
+
+
+def sanitize_item_text_for_display(text: str) -> str:
+    """Remove AI image-prompt hints; keep purchasable attributes like （圆领短袖）."""
+
+    def _replace(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        if _paren_inner_is_prompt_only(inner):
+            return ""
+        return match.group(0)
+
+    result = re.sub(r"（([^）]*)）", _replace, text.strip())
+    result = re.sub(r"\(([^)]*)\)", _replace, result)
+    return re.sub(r"\s+", " ", result).strip() or text.strip()
+
+
+def sanitize_item_text_for_commerce(text: str) -> str:
+    """Same as display sanitizer — used before Taobao search and product matching."""
+    return sanitize_item_text_for_display(text)
+
+
+def sanitize_recommendation_reason(text: str) -> str:
+    """Strip leading Xiaohongshu citation from stylist recommendation_reason."""
+    cleaned = text.strip()
+    cleaned = re.sub(
+        r"^参考小红书[「\"].*?[」\"]\s*高赞笔记[，,]?\s*",
+        "",
+        cleaned,
+    )
+    cleaned = re.sub(r"^参考小红书.*?高赞笔记[，,]?\s*", "", cleaned)
+    return cleaned.strip() or text.strip()
 
 
 def expand_outfit_item_slots(items: list[tuple[str, str]]) -> list[tuple[str, str]]:

@@ -5,8 +5,9 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Literal
 
-from src.graph.state import DayItinerary
-from src.services.poi_pool import distribute_poi_pool, plan_auto_itinerary
+from src.graph.state import DailyWeather, DayItinerary
+from src.services.itinerary_planner import plan_itinerary_simple
+from src.services.poi_pool import distribute_poi_pool
 
 
 def iter_trip_dates(start_date: date, end_date: date) -> list[date]:
@@ -24,15 +25,24 @@ def assign_spots_auto(
     *,
     destination: str = "",
     extra_poi_names: list[str] | None = None,
+    weather_by_date: dict[date, DailyWeather] | None = None,
+    preferences: dict[str, object] | None = None,
 ) -> list[DayItinerary]:
-    """Expand POI pool then distribute morning/afternoon/(optional) evening per day."""
-    _pool, rows = plan_auto_itinerary(
-        user_spot_names=spot_names,
+    """Rule/AI travel planner — geographic clustering with duration & weather constraints."""
+    del preferences  # used in full workflow planner; preview uses rule scoring defaults
+    merged: list[str] = []
+    seen: set[str] = set()
+    for name in [*spot_names, *(extra_poi_names or [])]:
+        cleaned = name.strip()
+        if cleaned and cleaned not in seen:
+            merged.append(cleaned)
+            seen.add(cleaned)
+    return plan_itinerary_simple(
+        merged,
+        dates,
         destination=destination,
-        dates=dates,
-        extra_poi_names=extra_poi_names,
+        weather_by_date=weather_by_date,
     )
-    return rows
 
 
 def assign_spots_manual(

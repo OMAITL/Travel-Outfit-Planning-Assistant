@@ -46,6 +46,10 @@ class DailyReportCard(BaseModel):
     morning: str | None = Field(default=None, description="Morning POI")
     afternoon: str | None = Field(default=None, description="Afternoon POI")
     evening: str | None = Field(default=None, description="Optional evening POI")
+    plan_reason: str | None = Field(
+        default=None,
+        description="Planner rationale for this day's spot arrangement",
+    )
     weather: DailyWeather | None = None
     outfit: DailyOutfit | None = None
     outfit_items: list[OutfitItemView] = Field(default_factory=list)
@@ -66,6 +70,10 @@ class DailyReportCard(BaseModel):
         default_factory=list,
         max_length=12,
         description="Up to 3 matched products per category (top/bottom/shoes/acc) per day",
+    )
+    travel_tips: list[str] = Field(
+        default_factory=list,
+        description="Weather-based travel reminders for this day",
     )
     degraded: bool = Field(
         default=False,

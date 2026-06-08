@@ -16,6 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from src.graph.state import TripPreferences
+from src.services.body_profile import BodyProfile
 from src.services.xhs_keywords import (
     avoid_match_tokens,
     body_type_search_label,
@@ -50,6 +51,7 @@ class OutfitSearchProfile(BaseModel):
     spot: str
     trip_date: date | None = None
     height_cm: float | None = None
+    weight_kg: float | None = None
     body_type: str | None = None
     styles: list[str] = Field(default_factory=list)
     gender: str | None = None
@@ -91,6 +93,7 @@ def profile_from_preferences(
         spot=spot.strip() or destination.strip(),
         trip_date=trip_date,
         height_cm=prefs.height_cm,
+        weight_kg=prefs.weight_kg,
         body_type=prefs.body_type,
         styles=styles or ["休闲"],
         gender=prefs.gender,
@@ -114,7 +117,17 @@ def compile_base_tokens(profile: OutfitSearchProfile) -> list[QueryToken]:
         tokens.append(QueryToken(token=gender_label, rule="性别"))
 
     body_label = body_type_search_label(profile.body_type)
-    if body_label:
+    body_profile = BodyProfile(
+        height_cm=profile.height_cm,
+        weight_kg=profile.weight_kg,
+        body_type=profile.body_type,
+        gender=profile.gender,
+    )
+    xhs_body = body_profile.xhs_body_tokens()
+    if xhs_body:
+        for token in xhs_body:
+            tokens.append(QueryToken(token=token, rule="体型"))
+    elif body_label:
         tokens.append(QueryToken(token=body_label, rule="体型"))
 
     style_label = style_search_label(profile.styles[0] if profile.styles else "")

@@ -77,6 +77,7 @@ export interface DailyReportCard {
   morning?: string | null;
   afternoon?: string | null;
   evening?: string | null;
+  plan_reason?: string | null;
   weather: DailyWeather | null;
   outfit: DailyOutfit | null;
   outfit_items?: OutfitItemView[];
@@ -84,6 +85,7 @@ export interface DailyReportCard {
   look_image_url: string | null;
   look_images_by_spot?: Record<string, string>;
   style_references?: StyleReference[];
+  travel_tips?: string[];
   products: ProductCard[];
   degraded?: boolean;
 }

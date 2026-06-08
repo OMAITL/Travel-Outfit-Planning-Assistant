@@ -55,6 +55,19 @@ def test_plan_auto_itinerary_preserves_user_order() -> None:
     assert rows[1].afternoon == "大理古城"
 
 
+def test_assign_spots_auto_clusters_by_region() -> None:
+    dates = [date(2026, 6, 6), date(2026, 6, 7)]
+    rows = assign_spots_auto(
+        ["大理古城", "崇圣寺三塔", "洱海生态廊道"],
+        dates,
+        destination="大理",
+    )
+    day_spots = [s for row in rows for s in row.spot_names]
+    assert "大理古城" in day_spots
+    assert "崇圣寺三塔" in day_spots
+    assert "洱海生态廊道" in day_spots
+
+
 def test_build_itinerary_manual_mode_keeps_user_slots() -> None:
     rows = build_itinerary(
         start_date=date(2026, 6, 5),

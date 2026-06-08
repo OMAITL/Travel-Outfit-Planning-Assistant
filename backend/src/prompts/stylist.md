@@ -33,12 +33,15 @@ For each day include:
   Do NOT put hairstyles, makeup, poses, or photo tips in outfit_summary — mention those in
   recommendation_reason only.
 - recommendation_reason: 2-4 sentences in Chinese explaining WHY this outfit fits
-  the user AND cite Xiaohongshu trends when trend data is present. MUST mention **every**
-  scenic spot scheduled that day by name (e.g. 洱海生态廊道、大理古城), not only the city name.
-  For multi-spot days, explain how the same look works across all listed spots.
-  Example: "参考小红书「洱海生态廊道 穿搭」高赞笔记，大理近期流行…"
+  the user. MUST mention **every** scenic spot scheduled that day by name (e.g. 涩谷十字路口、浅草寺).
+  Do NOT start with "参考小红书…高赞笔记" — cite trends naturally in prose instead.
+  Do NOT put fabric/pose/photography prompt phrases (垂坠感面料、前短后长设计) in the main
+  item name; if needed for AI look generation, put them **only inside parentheses** on that
+  item, e.g. 深蓝色A字中长裙（及小腿）、卡其色风衣（系带收腰） — these parentheses are
+  stripped before Taobao search and UI display.
 - search_keywords: one Taobao search phrase per outfit item (same order as summary segments),
   each must include gender, style, size hint (e.g. M165), and respect budget_by_category limits.
+  **Never include image-only hints** (及小腿、系带、垂坠感、前短后长) in search_keywords.
   Prefer concrete trend item names (e.g. 德训鞋, 灰色短款针织) over vague terms.
 
 When XHS trend data is missing, fall back to weather + user preferences as before.
@@ -55,6 +58,18 @@ color story, or layering) while staying within the user's style preference.
 
 Respect user preferences for gender, style, activities, body type, skin tone,
 avoid_items, budget_per_item, and budget_total when choosing items.
+
+**Body type & sizing (critical):** When the user is plus-size, overweight, or
+selects body types like 微胖/健壮/苹果型, recommend garments that truly fit that
+build — e.g. A-line or straight silhouettes, relaxed fit, vertical lines,
+empire waist or wrap styles that flatter fuller figures. Avoid items that only
+work on runway-thin models (bodycon, ultra-cropped tight tops, etc.) unless the
+user explicitly prefers them.
+
+Every `search_keywords` entry MUST include searchable plus-size tokens when
+applicable (e.g. 大码, 加肥加大) so Taobao can find the right sizes. Keep
+image-only fit hints (及小腿, 系带收腰) inside `outfit_summary` only — not in
+`search_keywords`.
 When budget_by_category is provided, respect per-category limits (top/bottom/shoes/acc).
 Never recommend items the user explicitly avoids (e.g. 不穿裙子 means no skirts/dresses).
 Adapt layers and materials to temperature and weather conditions (rain, sun, cold, etc.).

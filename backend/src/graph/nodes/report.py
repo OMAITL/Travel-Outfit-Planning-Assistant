@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from app.utils.enrichment import expand_outfit_item_slots, is_purchasable_item_text, parse_outfit_items
+from app.utils.enrichment import (
+    expand_outfit_item_slots,
+    is_purchasable_item_text,
+    parse_outfit_items,
+    sanitize_item_text_for_display,
+    sanitize_recommendation_reason,
+)
+from src.services.travel_tips import build_daily_travel_tips
 from app.utils.product_grouping import assign_products_to_items
 from src.graph.report import DailyReportCard, OutfitItemView, ProductItemGroup, StyleReferenceView, TravelReport
 from src.graph.state import (
@@ -102,18 +109,22 @@ def _build_product_groups(
         for label, text in expand_outfit_item_slots(parse_outfit_items(outfit.outfit_summary))
         if is_purchasable_item_text(text)
     ]
-    outfit_items = [OutfitItemView(label=label, text=text) for label, text in parsed]
+    outfit_items = [
+        OutfitItemView(label=label, text=sanitize_item_text_for_display(text))
+        for label, text in parsed
+    ]
     assigned = assign_products_to_items(outfit, products, max_per_item=3)
     groups: list[ProductItemGroup] = []
     for index, (label, text, group_products) in enumerate(assigned):
         cat_map = {"上装": "top", "内搭": "top", "外套": "top", "下装": "bottom", "鞋": "shoes", "配饰": "acc", "包": "acc"}
         category = cat_map.get(label, "top")
-        short = text[:8] + ("…" if len(text) > 8 else "")
+        display_text = sanitize_item_text_for_display(text)
+        short = display_text[:8] + ("…" if len(display_text) > 8 else "")
         groups.append(
             ProductItemGroup(
                 id=f"{category}-{index}",
                 label=f"{label}·{short}" if len(parsed) > 1 or label in {"上装", "外套"} else label,
-                item_text=text,
+                item_text=display_text,
                 category=category,
                 products=group_products[:3],
             )
@@ -167,6 +178,16 @@ def report_node(state: PlanningState) -> PlanningState:
         )
         has_look = bool(day_looks)
         degraded = (not has_look and day in outfit_map) or (not card_products and day in outfit_map)
+        day_weather = weather_map.get(day)
+        display_outfit = outfit
+        if outfit is not None:
+            display_outfit = outfit.model_copy(
+                update={
+                    "recommendation_reason": sanitize_recommendation_reason(
+                        outfit.recommendation_reason
+                    ),
+                }
+            )
         daily_cards.append(
             DailyReportCard(
                 date=day,
@@ -174,8 +195,18 @@ def report_node(state: PlanningState) -> PlanningState:
                 morning=day_plan.morning if day_plan else None,
                 afternoon=day_plan.afternoon if day_plan else None,
                 evening=day_plan.evening if day_plan else None,
-                weather=weather_map.get(day),
-                outfit=outfit,
+                plan_reason=day_plan.plan_reason if day_plan else None,
+                weather=day_weather,
+                travel_tips=(
+                    build_daily_travel_tips(
+                        day_weather,
+                        spot_names=spot_names,
+                        outfit_summary=outfit.outfit_summary if outfit else None,
+                    )
+                    if day_weather
+                    else []
+                ),
+                outfit=display_outfit,
                 outfit_items=outfit_items,
                 product_groups=product_groups,
                 look_image_url=primary_look,

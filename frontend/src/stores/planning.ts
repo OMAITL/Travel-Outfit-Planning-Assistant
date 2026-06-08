@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import { postPlan } from "@/api/client";
 import type { City, PlanningState, Spot, TripFormPayload } from "@/api/types";
 import { STATIC_CITIES } from "@/data/cities";
-import { parseDate, weatherIcon } from "@/utils/format";
+import { addDays, parseDate, weatherIcon } from "@/utils/format";
 import { planAutoItineraryIds } from "@/utils/itinerary";
 
 const WEEKDAY_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -22,39 +22,31 @@ export interface TripDay {
   eveningId?: string;
 }
 
-const DEFAULT_DAYS: TripDay[] = [
-  {
-    dateShort: "6/5",
-    weekday: "周五",
-    title: "6月5日 · 周五",
-    weather: "🌧 雨 16–27°C · 降水 60%",
-    temp: "🌧 16–27°C",
-    reason:
-      "洱海骑行需要防风防泼水的薄外套，内搭白色 T 恤 + 牛仔裤经典耐看；卡其色系与湖光山色呼应，拍照出片。",
-    spotIds: ["erhai", "gucheng"],
-    sceneSpots: ["洱海廊道", "大理古城"],
-  },
-  {
-    dateShort: "6/6",
-    weekday: "周六",
-    title: "6月6日 · 周六",
-    weather: "☀ 晴 18–28°C · 降水 10%",
-    temp: "☀ 18–28°C",
-    reason: "三塔观光以轻便透气为主，亚麻衬衫 + 阔腿裤舒适又上镜。",
-    spotIds: ["santa", "gucheng"],
-    sceneSpots: ["崇圣寺三塔", "大理古城"],
-  },
-  {
-    dateShort: "6/7",
-    weekday: "周日",
-    title: "6月7日 · 周日",
-    weather: "⛅ 多云 17–26°C · 降水 20%",
-    temp: "⛅ 17–26°C",
-    reason: "返程日选易打理的速干材质，一件可收纳的风衣应对早晚温差。",
-    spotIds: ["erhai"],
-    sceneSpots: ["洱海廊道"],
-  },
-];
+function createEmptyDay(d: Date): TripDay {
+  const m = d.getMonth() + 1;
+  const dayNum = d.getDate();
+  const wd = WEEKDAY_ZH[d.getDay()];
+  return {
+    dateShort: `${m}/${dayNum}`,
+    weekday: wd,
+    title: `${m}月${dayNum}日 · ${wd}`,
+    weather: "",
+    temp: "",
+    reason: "",
+    spotIds: [],
+    sceneSpots: [],
+  };
+}
+
+function createDefaultEmptyDays(): TripDay[] {
+  const start = addDays(new Date(), 1);
+  const end = addDays(new Date(), 3);
+  const days: TripDay[] = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    days.push(createEmptyDay(new Date(d)));
+  }
+  return days;
+}
 
 export function shortSpotLabel(name: string): string {
   return name
@@ -71,13 +63,17 @@ export const usePlanningStore = defineStore("planning", () => {
   const selectedDayIndex = ref(0);
   const manualActiveDay = ref(0);
   const inputTab = ref<"form" | "chat">("form");
-  const demoReportActive = ref(true);
+  const demoReportActive = ref(false);
   const editItinerary = ref(false);
   const toast = ref<string | null>(null);
   const planMode = ref<"auto" | "manual">("auto");
   const currentCityKey = ref("dali");
-  const selectedSpotIds = ref<string[]>([...STATIC_CITIES[0].default_spot_ids]);
-  const days = ref<TripDay[]>([...DEFAULT_DAYS]);
+  const selectedSpotIds = ref<string[]>([]);
+  const days = ref<TripDay[]>(createDefaultEmptyDays());
+
+  const hasReport = computed(
+    () => (state.value?.report?.daily_cards?.length ?? 0) > 0 || demoReportActive.value,
+  );
 
   const currentCity = computed(() => cities.value.find((c) => c.key === currentCityKey.value));
 
@@ -123,9 +119,9 @@ export const usePlanningStore = defineStore("planning", () => {
         dateShort: `${m}/${dayNum}`,
         weekday: wd,
         title: `${m}月${dayNum}日 · ${wd}`,
-        weather: old?.weather ?? "⛅ 多云 18–26°C · 降水 20%",
-        temp: old?.temp ?? "⛅ 18–26°C",
-        reason: old?.reason ?? "根据当日天气与景点活动，建议舒适分层穿搭。",
+        weather: old?.weather ?? "",
+        temp: old?.temp ?? "",
+        reason: old?.reason ?? "",
         spotIds: old?.spotIds ? [...old.spotIds] : [],
         sceneSpots: old?.sceneSpots ? [...old.sceneSpots] : [],
       });
@@ -180,7 +176,7 @@ export const usePlanningStore = defineStore("planning", () => {
     const city = cities.value.find((c) => c.key === key);
     if (!city) return;
     currentCityKey.value = key;
-    selectedSpotIds.value = [...city.default_spot_ids];
+    selectedSpotIds.value = [];
     if (planMode.value === "auto") autoAssignDays();
     else syncAllDays();
   }
@@ -203,13 +199,13 @@ export const usePlanningStore = defineStore("planning", () => {
     error.value = null;
     selectedDayIndex.value = 0;
     manualActiveDay.value = 0;
-    demoReportActive.value = true;
+    demoReportActive.value = false;
     editItinerary.value = false;
     toast.value = null;
     planMode.value = "auto";
     currentCityKey.value = "dali";
-    selectedSpotIds.value = [...STATIC_CITIES[0].default_spot_ids];
-    days.value = [...DEFAULT_DAYS];
+    selectedSpotIds.value = [];
+    days.value = createDefaultEmptyDays();
     syncAllDays();
   }
 
@@ -247,11 +243,12 @@ export const usePlanningStore = defineStore("planning", () => {
     editItinerary.value ? "✓ 完成编辑" : "✏️ 编辑行程",
   );
 
-  const reportModeNote = computed(() =>
-    planMode.value === "manual"
+  const reportModeNote = computed(() => {
+    if (!hasReport.value) return "";
+    return planMode.value === "manual"
       ? "✋ 你在左侧指定每日景点 · 下方卡片同步展示你的安排"
-      : "✨ 系统已按所选景点分配每日上午/下午 · 同一景点可跨多天 · 可「编辑行程」微调",
-  );
+      : "✨ AI 规划师已按区域/天气/游玩时长智能排期 · 可「编辑行程」微调";
+  });
 
   const resultBadge = computed(() =>
     planMode.value === "manual"
@@ -424,6 +421,7 @@ export const usePlanningStore = defineStore("planning", () => {
     manualActiveDay,
     inputTab,
     demoReportActive,
+    hasReport,
     editItinerary,
     toast,
     planMode,

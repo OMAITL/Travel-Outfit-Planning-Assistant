@@ -106,6 +106,10 @@ def image_node(state: PlanningState) -> PlanningState:
                 outfit_summary=outfit.outfit_summary,
                 style=prefs.style,
                 gender=prefs.gender,
+                height_cm=prefs.height_cm,
+                weight_kg=prefs.weight_kg,
+                body_type=prefs.body_type,
+                skin_tone=prefs.skin_tone,
                 activities=prefs.activities,
                 spot_name=spot_name,
             )

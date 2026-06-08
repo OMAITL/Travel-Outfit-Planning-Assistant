@@ -8,7 +8,12 @@ from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from app.utils.enrichment import expand_outfit_item_slots, is_purchasable_item_text, parse_outfit_items
+from app.utils.enrichment import (
+    expand_outfit_item_slots,
+    is_purchasable_item_text,
+    parse_outfit_items,
+    sanitize_item_text_for_commerce,
+)
 from src.graph.state import DailyOutfit, DayOutfitTrend, TripPreferences
 from src.services.budget import budget_for_category, infer_item_category
 from src.services.llm import get_chat_model, invoke_structured, load_prompt
@@ -51,6 +56,9 @@ def _fallback_keyword(label: str, item_text: str, prefs: TripPreferences) -> str
         item_text.strip(),
         gender=prefs.gender,
         style=prefs.style,
+        height_cm=prefs.height_cm,
+        weight_kg=prefs.weight_kg,
+        body_type=prefs.body_type,
     )
 
 
@@ -101,10 +109,11 @@ def _merge_llm_plans(
         cat_budget = budget_for_category(cat, prefs)
         max_p = cat_budget if cat_budget and cat_budget > 0 else plan.max_price
         search_text = simplify_item_for_search(llm_item.item_text or plan.item_text)
+        commerce_text = sanitize_item_text_for_commerce(llm_item.item_text or plan.item_text)
         merged.append(
             plan.model_copy(
                 update={
-                    "item_text": llm_item.item_text or plan.item_text,
+                    "item_text": commerce_text,
                     "keyword": (llm_item.keyword or "").strip()
                     or _fallback_keyword(plan.label, search_text, prefs),
                     "max_price": max_p,
@@ -123,9 +132,10 @@ def _fallback_plans(outfit: DailyOutfit, prefs: TripPreferences) -> list[Shoppin
     for label, text in parsed:
         if _is_skippable_item_text(text):
             continue
+        commerce_text = sanitize_item_text_for_commerce(text)
         category = _label_category(label)
         max_price = budget_for_category(category, prefs) or prefs.budget_per_item or 9999.0
-        keyword = _fallback_keyword(label, text, prefs)
+        keyword = _fallback_keyword(label, commerce_text, prefs)
         if slot_index < len(stylist_keywords):
             keyword = stylist_keywords[slot_index]
         slot_index += 1
@@ -133,11 +143,16 @@ def _fallback_plans(outfit: DailyOutfit, prefs: TripPreferences) -> list[Shoppin
             ShoppingSearchItem(
                 date=outfit.date,
                 label=label,
-                item_text=text,
+                item_text=commerce_text,
                 keyword=keyword,
                 category=category,
                 max_price=max_price,
-                size_hint=infer_size_hint(prefs.height_cm, prefs.weight_kg, prefs.gender),
+                size_hint=infer_size_hint(
+                    prefs.height_cm,
+                    prefs.weight_kg,
+                    prefs.gender,
+                    body_type=prefs.body_type,
+                ),
             )
         )
     return plans
@@ -177,7 +192,7 @@ def _trend_plans(
             continue
         category = _label_category(label)
         trend_text = _trend_item_for_category(trend, category)
-        item_text = text or trend_text
+        commerce_text = sanitize_item_text_for_commerce(text or trend_text)
         search_text = simplify_item_for_search(trend_text or text)
         max_price = budget_for_category(category, prefs) or prefs.budget_per_item or 9999.0
         keyword = _fallback_keyword(label, search_text, prefs)
@@ -188,11 +203,16 @@ def _trend_plans(
             ShoppingSearchItem(
                 date=outfit.date,
                 label=label,
-                item_text=item_text,
+                item_text=commerce_text,
                 keyword=keyword,
                 category=category,
                 max_price=max_price,
-                size_hint=infer_size_hint(prefs.height_cm, prefs.weight_kg, prefs.gender),
+                size_hint=infer_size_hint(
+                    prefs.height_cm,
+                    prefs.weight_kg,
+                    prefs.gender,
+                    body_type=prefs.body_type,
+                ),
             )
         )
     return plans
@@ -222,7 +242,12 @@ def enrich_search_plans(
     if not use_llm:
         return fallback_all
 
-    size_hint = infer_size_hint(prefs.height_cm, prefs.weight_kg, prefs.gender)
+    size_hint = infer_size_hint(
+        prefs.height_cm,
+        prefs.weight_kg,
+        prefs.gender,
+        body_type=prefs.body_type,
+    )
     outfit_lines = []
     for outfit in outfits:
         items = parse_outfit_items(outfit.outfit_summary)

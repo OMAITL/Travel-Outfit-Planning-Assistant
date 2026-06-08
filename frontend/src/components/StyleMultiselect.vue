@@ -26,15 +26,17 @@ function toggleOpen() {
 }
 
 function removeStyle(style: string) {
-  const next = props.modelValue.filter((s) => s !== style);
-  emit("update:modelValue", next.length ? next : ["休闲"]);
+  emit(
+    "update:modelValue",
+    props.modelValue.filter((s) => s !== style),
+  );
 }
 
 function toggleStyle(style: string) {
   const set = new Set(props.modelValue);
   if (set.has(style)) {
     set.delete(style);
-    emit("update:modelValue", set.size ? [...set] : ["休闲"]);
+    emit("update:modelValue", [...set]);
   } else {
     set.add(style);
     emit("update:modelValue", [...set]);
@@ -59,7 +61,6 @@ onUnmounted(() => document.removeEventListener("click", onDocClick));
       <span v-for="s in modelValue" :key="s" class="spot-chip style-chip">
         {{ s }}
         <button
-          v-if="modelValue.length > 1 || s !== '休闲'"
           type="button"
           class="chip-x"
           aria-label="移除"

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import re
 
+from app.utils.enrichment import sanitize_item_text_for_commerce
+from src.services.body_profile import BodyProfile
+
 # Longer prefixes first so 米白色 matches before 米/白.
 _COLOR_PREFIXES = (
     "米白色",
@@ -96,11 +99,13 @@ def extract_item_colors(text: str) -> list[str]:
 def simplify_item_for_search(text: str, *, max_len: int = 20) -> str:
     """
     Trim outfit item text for Taobao search while keeping color and core garment type.
+    Strips AI image-prompt hints (e.g. 及小腿、系带) that hurt search relevance.
     """
-    cleaned = re.sub(r"\s+", "", text.strip())
+    cleaned = sanitize_item_text_for_commerce(text)
+    cleaned = re.sub(r"\s+", "", cleaned.strip())
     if len(cleaned) > max_len:
         cleaned = cleaned[:max_len]
-    return cleaned or text.strip()
+    return cleaned or sanitize_item_text_for_commerce(text).strip() or text.strip()
 
 
 def build_item_search_keyword(
@@ -108,13 +113,25 @@ def build_item_search_keyword(
     *,
     gender: str | None = None,
     style: str | None = None,
+    height_cm: float | None = None,
+    weight_kg: float | None = None,
+    body_type: str | None = None,
     max_len: int = 50,
 ) -> str:
-    """Build a Taobao query that preserves color and garment keywords."""
+    """Build a Taobao query that preserves color, garment keywords, and size hints."""
     core = simplify_item_for_search(item_text, max_len=24)
+    profile = BodyProfile(
+        height_cm=height_cm,
+        weight_kg=weight_kg,
+        body_type=body_type,
+        gender=gender,
+    )
     parts: list[str] = []
     if gender and gender not in {"", "不限"}:
         parts.append(gender)
+    for token in profile.commerce_size_keywords():
+        if token not in parts:
+            parts.append(token)
     if style:
         parts.append(style.split("、")[0].split(",")[0].strip())
     parts.append(core)

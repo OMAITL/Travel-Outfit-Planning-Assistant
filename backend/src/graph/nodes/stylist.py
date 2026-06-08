@@ -9,6 +9,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field, model_validator
 
 from src.graph.state import DailyOutfit, PlanningState
+from src.services.body_profile import BodyProfile
 from src.services.itinerary import day_all_spots
 from src.services.llm import get_chat_model, invoke_structured, load_prompt
 
@@ -79,31 +80,33 @@ def _format_trip(state: PlanningState) -> str:
     if trip is None:
         return "Trip context unavailable."
     prefs = trip.preferences
-    return json.dumps(
-        {
-            "destination": trip.destination,
-            "start_date": str(trip.start_date),
-            "end_date": str(trip.end_date),
-            "trip_days": trip.trip_days,
-            "party_size": prefs.party_size,
-            "activities": prefs.activities,
-            "gender": prefs.gender,
-            "style": prefs.style,
-            "height_cm": prefs.height_cm,
-            "weight_kg": prefs.weight_kg,
-            "body_type": prefs.body_type,
-            "skin_tone": prefs.skin_tone,
-            "avoid_items": prefs.avoid_items,
-            "spot_names": prefs.spot_names,
-            "plan_mode": prefs.plan_mode,
-            "budget_per_item": prefs.budget_per_item,
-            "budget_total": prefs.budget_total,
-            "budget_by_category": (
-                prefs.budget_by_category.model_dump() if prefs.budget_by_category else None
-            ),
-        },
-        ensure_ascii=False,
-    )
+    body = BodyProfile.from_preferences(prefs)
+    payload = {
+        "destination": trip.destination,
+        "start_date": str(trip.start_date),
+        "end_date": str(trip.end_date),
+        "trip_days": trip.trip_days,
+        "party_size": prefs.party_size,
+        "activities": prefs.activities,
+        "gender": prefs.gender,
+        "style": prefs.style,
+        "height_cm": prefs.height_cm,
+        "weight_kg": prefs.weight_kg,
+        "body_type": prefs.body_type,
+        "skin_tone": prefs.skin_tone,
+        "avoid_items": prefs.avoid_items,
+        "spot_names": prefs.spot_names,
+        "plan_mode": prefs.plan_mode,
+        "budget_per_item": prefs.budget_per_item,
+        "budget_total": prefs.budget_total,
+        "budget_by_category": (
+            prefs.budget_by_category.model_dump() if prefs.budget_by_category else None
+        ),
+    }
+    constraints = body.stylist_constraints_zh()
+    if constraints:
+        payload["body_fit_notes"] = constraints
+    return json.dumps(payload, ensure_ascii=False)
 
 
 def _format_trends(state: PlanningState) -> str:

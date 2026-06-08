@@ -8,6 +8,7 @@ from pathlib import Path
 import httpx
 
 from src.config import get_settings
+from src.services.body_profile import BodyProfile
 from src.tools.jimeng import generate_jimeng_image, generate_jimeng_image_from_reference
 
 DASHSCOPE_BASE_URL = "https://dashscope.aliyuncs.com/api/v1"
@@ -66,13 +67,22 @@ def _activities_to_scene(activities: list[str] | None) -> str:
     return "popular tourist area"
 
 
-def _gender_subject(gender: str | None) -> str:
-    value = (gender or "").strip()
-    if value == "女":
-        return "一位年轻女性游客"
-    if value == "男":
-        return "一位年轻男性游客"
-    return "一位年轻游客"
+def _model_subject(
+    gender: str | None = None,
+    *,
+    height_cm: float | None = None,
+    weight_kg: float | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
+) -> str:
+    profile = BodyProfile(
+        height_cm=height_cm,
+        weight_kg=weight_kg,
+        body_type=body_type,
+        skin_tone=skin_tone,
+        gender=gender,
+    )
+    return profile.image_subject_zh()
 
 
 def _activity_action(activities: list[str] | None) -> str:
@@ -125,6 +135,10 @@ def build_editorial_outfit_prompt(
     trend: "DayOutfitTrend | None" = None,
     style: str = "休闲",
     gender: str | None = None,
+    height_cm: float | None = None,
+    weight_kg: float | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
     activities: list[str] | None = None,
     spot_name: str | None = None,
     reference_hint: str = "",
@@ -155,6 +169,10 @@ def build_editorial_outfit_prompt(
         outfit_summary=outfit_summary,
         style=style,
         gender=gender,
+        height_cm=height_cm,
+        weight_kg=weight_kg,
+        body_type=body_type,
+        skin_tone=skin_tone,
         activities=activities,
         spot_name=spot_name,
         reference_hint=reference_hint,
@@ -168,25 +186,38 @@ def build_outfit_reference_prompt(
     outfit_summary: str,
     style: str = "休闲",
     gender: str | None = None,
+    height_cm: float | None = None,
+    weight_kg: float | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
     activities: list[str] | None = None,
     spot_name: str | None = None,
     reference_hint: str = "",
 ) -> str:
     """Prompt for Jimeng i2i — keep outfit from reference, swap in scenic background."""
-    gender_text = gender or "年轻"
+    profile = BodyProfile(
+        height_cm=height_cm,
+        weight_kg=weight_kg,
+        body_type=body_type,
+        skin_tone=skin_tone,
+        gender=gender,
+    )
+    gender_text = profile.image_subject_zh()
     spot = spot_name or destination
     from src.tools.scenic_scene import resolve_spot_scene
 
     spot_scene = resolve_spot_scene(spot, destination)
     outfit_desc = format_outfit_description(outfit_summary)
     hint = f" Reference note style: {reference_hint}." if reference_hint else ""
+    anti_thin = profile.image_negative_extra()
+    anti_thin_clause = f" Avoid: {anti_thin}." if anti_thin else ""
     return (
         f"Single person only, no duplicate subjects, no collage. "
-        f"A {gender_text} person wearing exactly: {outfit_desc}. "
+        f"{gender_text}, wearing exactly: {outfit_desc}. "
         f"Background must be {spot_scene} at {destination} ({spot}), "
         f"real tourist landmark, natural daylight travel lifestyle photo, full body mid-distance. "
         f"Weather: {weather_summary}. Style: {style}. Scene: {_activities_to_scene(activities)}."
-        f"{hint} "
+        f"{hint}{anti_thin_clause} "
         f"{EDITORIAL_QUALITY_SUFFIX} "
         f"No text, captions, infographic overlay, watermark, or brand logos. Photorealistic fashion editorial."
     )
@@ -200,6 +231,10 @@ def build_outfit_prompt(
     outfit_summary: str,
     style: str = "休闲",
     gender: str | None = None,
+    height_cm: float | None = None,
+    weight_kg: float | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
     activities: list[str] | None = None,
     spot_name: str | None = None,
 ) -> str:
@@ -212,18 +247,33 @@ def build_outfit_prompt(
     spot = spot_name or destination
     from src.tools.scenic_scene import resolve_spot_scene_zh
 
-    subject = _gender_subject(gender)
+    profile = BodyProfile(
+        height_cm=height_cm,
+        weight_kg=weight_kg,
+        body_type=body_type,
+        skin_tone=skin_tone,
+        gender=gender,
+    )
+    subject = profile.image_subject_zh()
     outfit_desc = format_outfit_description(outfit_summary)
     spot_scene = resolve_spot_scene_zh(spot, destination)
     action = _activity_action(activities)
     atmosphere = _weather_atmosphere(weather_summary)
     aspect = _aspect_ratio_hint()
     style_label = (style or "休闲").split("、")[0].strip()
+    anti_thin = profile.image_negative_extra()
+    anti_thin_line = (
+        f"\n\n【禁止】{anti_thin.replace(', ', '、')}。"
+        if anti_thin
+        else ""
+    )
 
     return (
         f"用于旅行穿搭方案展示的{aspect}全身时尚摄影大片，高清写实。\n\n"
         f"【画面内容】{subject}身穿{outfit_desc}，在{destination}{spot}的{spot_scene}，"
         f"{action}。{atmosphere}。\n\n"
+        f"【人物体型】必须真实还原上述身高体重与体型特征，"
+        f"不得画成时装模特般的极瘦身材。{anti_thin_line}\n\n"
         f"【环境】真实的{spot}旅游地标实景，{spot_scene}，可见天空与周边环境，"
         f"绝非影棚抠图或虚拟背景。\n\n"
         f"【画面美学】{style_label}风旅行穿搭摄影；自然光；清新写实配色；浅景深；"

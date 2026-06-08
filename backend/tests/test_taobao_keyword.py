@@ -21,6 +21,19 @@ def test_build_item_search_keyword_includes_color() -> None:
     assert "女" in keyword
 
 
+def test_build_item_search_keyword_plus_size() -> None:
+    keyword = build_item_search_keyword(
+        "白色A字连衣裙",
+        gender="女",
+        style="休闲",
+        height_cm=165,
+        weight_kg=200,
+        body_type="健壮",
+    )
+    assert "大码" in keyword
+    assert "白色" in keyword
+
+
 def test_extract_item_colors() -> None:
     assert "白" in extract_item_colors("白色法式方领短款针织")
     assert "卡其" in extract_item_colors("卡其色高腰阔腿裤")

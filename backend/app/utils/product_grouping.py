@@ -74,13 +74,22 @@ def assign_products_to_items(
     Returns list of (label, item_text, products[:max_per_item]).
     Products are matched by shopping metadata first, then title overlap.
     """
-    from app.utils.enrichment import expand_outfit_item_slots, is_purchasable_item_text, parse_outfit_items
+    from app.utils.enrichment import (
+        expand_outfit_item_slots,
+        is_purchasable_item_text,
+        parse_outfit_items,
+        sanitize_item_text_for_commerce,
+    )
 
     if outfit is None:
         return [("穿搭", "全套方案", products[:max_per_item])]
 
     items = expand_outfit_item_slots(parse_outfit_items(outfit.outfit_summary))
-    items = [(label, text) for label, text in items if is_purchasable_item_text(text)]
+    items = [
+        (label, sanitize_item_text_for_commerce(text))
+        for label, text in items
+        if is_purchasable_item_text(text)
+    ]
     assigned: list[tuple[str, str, list[ProductCard]]] = []
     used_ids: set[str] = set()
 

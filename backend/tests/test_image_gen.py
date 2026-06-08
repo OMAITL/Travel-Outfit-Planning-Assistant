@@ -43,7 +43,7 @@ def test_build_outfit_prompt_includes_context() -> None:
     assert "【画面内容】" in prompt
     assert "【画面美学】" in prompt
     assert "旅行穿搭方案展示" in prompt
-    assert "年轻女性" in prompt
+    assert "成年女性" in prompt
     assert "竖版" in prompt or "画幅" in prompt
 
 

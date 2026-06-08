@@ -14,7 +14,7 @@ const store = usePlanningStore();
 const today = new Date();
 const startDate = ref(toIsoDate(addDays(today, 1)));
 const endDate = ref(toIsoDate(addDays(today, 3)));
-const styleTags = ref<string[]>(["休闲"]);
+const styleTags = ref<string[]>([]);
 const avoidItems = ref<string[]>([]);
 const categoryBudgets = ref({
   top: 200,
@@ -71,6 +71,14 @@ function onSubmit() {
     store.error = "返回日期不能早于出发日期";
     return;
   }
+  if (!store.selectedSpotIds.length) {
+    store.error = "请至少选择一个景点";
+    return;
+  }
+  if (!styleTags.value.length) {
+    store.error = "请至少选择一个风格标签";
+    return;
+  }
   store.error = null;
   if (store.planMode === "auto") store.autoAssignDays();
   const budgets = resolveBudgets();
@@ -85,7 +93,7 @@ function onSubmit() {
       start_date: startDate.value,
       end_date: endDate.value,
       gender: gender.value,
-      styles: styleTags.value.length ? [...styleTags.value] : ["休闲"],
+      styles: [...styleTags.value],
       activities: ["拍照", "逛街"],
       spot_names: store.selectedSpotIds
         .map((id) => store.getSpotById(id)?.name)
