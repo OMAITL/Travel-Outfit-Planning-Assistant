@@ -35,6 +35,16 @@ const taobaoKeywords = computed(() => {
 
 const xhsQueryDebug = computed(() => store.state?.xhs_query_debug ?? []);
 
+const xhsInspirationTrace = computed(() =>
+  (store.state?.trace ?? []).filter(
+    (t) => t.agent === "Inspiration" || t.agent === "QueryCompiler",
+  ),
+);
+
+const showXhsQueryDebug = computed(
+  () => USE_API && showLiveReport.value && xhsQueryDebug.value.length > 0,
+);
+
 const badgeStyle = computed(() =>
   showDemo.value
     ? store.resultBadge
@@ -194,7 +204,7 @@ function onDayClick(index: number, e: MouseEvent) {
       <p v-else-if="report?.disclaimer" class="footer-note">{{ report.disclaimer }}</p>
 
       <details
-        v-if="USE_API && showLiveReport && xhsQueryDebug.length"
+        v-if="showXhsQueryDebug"
         class="shopping-debug query-debug"
         :open="xhsDebugOpen"
         @toggle="xhsDebugOpen = ($event.target as HTMLDetailsElement).open"
@@ -221,6 +231,27 @@ function onDayClick(index: number, e: MouseEvent) {
         </ul>
         <p class="shopping-debug-hint">
           由 Outfit Query Compiler 生成：代码规则编译搜索词，结果按穿搭雷点规则过滤。
+          <span v-if="xhsInspirationTrace.length">
+            若「保留 0 条」，请看下方 Inspiration / QueryCompiler 日志或重新规划。
+          </span>
+        </p>
+      </details>
+
+      <details
+        v-else-if="USE_API && showLiveReport && xhsInspirationTrace.length"
+        class="shopping-debug query-debug"
+        :open="xhsDebugOpen"
+        @toggle="xhsDebugOpen = ($event.target as HTMLDetailsElement).open"
+      >
+        <summary>小红书搜索 Trace（{{ xhsInspirationTrace.length }} 条）</summary>
+        <ul>
+          <li v-for="(event, i) in xhsInspirationTrace" :key="i" :class="event.level">
+            <strong>{{ event.agent }}</strong>
+            <span class="shopping-debug-detail">{{ event.message }}</span>
+          </li>
+        </ul>
+        <p class="shopping-debug-hint">
+          未收到 xhs_query_debug 结构化数据（请重启后端后重新规划）。上方为 Inspiration / QueryCompiler 原始日志。
         </p>
       </details>
 

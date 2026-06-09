@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import date
 
-from src.graph.state import DayOutfitTrend, NoteOutfitAnalysis, OutfitInspiration
+from src.graph.state import DayOutfitTrend, NoteOutfitAnalysis, OutfitInspiration, XhsStyleProfile
 
 
 def _top_values(analyses: list[NoteOutfitAnalysis], field: str, limit: int = 3) -> list[str]:
@@ -76,6 +76,30 @@ def build_editorial_prompt(
     )
 
 
+def build_style_profile(analyses: list[NoteOutfitAnalysis]) -> XhsStyleProfile:
+    """Extract common outfit patterns from high-liked note analyses."""
+    colors: list[str] = []
+    for analysis in analyses:
+        palette = analysis.color_palette.strip()
+        if palette:
+            for part in palette.replace("、", ",").replace("/", ",").split(","):
+                cleaned = part.strip()
+                if cleaned:
+                    colors.append(cleaned)
+
+    color_counter: Counter[str] = Counter(colors)
+    recommended_colors = [item for item, _ in color_counter.most_common(5)]
+
+    return XhsStyleProfile(
+        top_style=_dominant_style(analyses),
+        common_tops=_top_values(analyses, "top", limit=5),
+        common_bottoms=_top_values(analyses, "bottom", limit=5),
+        common_shoes=_top_values(analyses, "shoes", limit=3),
+        common_accessories=_top_values(analyses, "accessories", limit=3),
+        recommended_colors=recommended_colors,
+    )
+
+
 def aggregate_day_trend(
     day: date,
     analyses: list[NoteOutfitAnalysis],
@@ -88,18 +112,20 @@ def aggregate_day_trend(
     """Merge per-note vision output into ranked picks for stylist/shopping/image."""
     day_refs = [ref for ref in inspirations if ref.trip_date == day]
     editorial = _best_editorial_prompt(analyses, day_refs)
+    style_profile = build_style_profile(analyses)
     trend = DayOutfitTrend(
         date=day,
-        dominant_style=_dominant_style(analyses),
-        top_picks=_top_values(analyses, "top"),
-        bottom_picks=_top_values(analyses, "bottom"),
-        shoes_picks=_top_values(analyses, "shoes"),
+        dominant_style=style_profile.top_style or _dominant_style(analyses),
+        top_picks=style_profile.common_tops or _top_values(analyses, "top"),
+        bottom_picks=style_profile.common_bottoms or _top_values(analyses, "bottom"),
+        shoes_picks=style_profile.common_shoes or _top_values(analyses, "shoes"),
         bag_picks=_top_values(analyses, "bag"),
-        acc_picks=_top_values(analyses, "accessories"),
-        color_palette=_dominant_palette(analyses),
+        acc_picks=style_profile.common_accessories or _top_values(analyses, "accessories"),
+        color_palette=", ".join(style_profile.recommended_colors) or _dominant_palette(analyses),
         scene_vibe=_dominant_scene(analyses),
         photo_style=_dominant_photo_style(analyses),
         editorial_prompt_en=editorial,
+        style_profile=style_profile,
         note_analyses=analyses,
     )
     if not trend.editorial_prompt_en and analyses:

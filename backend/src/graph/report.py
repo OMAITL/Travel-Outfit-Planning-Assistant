@@ -33,6 +33,10 @@ class StyleReferenceView(BaseModel):
     user_name: str | None = None
     liked_count: int | None = None
     search_keyword: str | None = None
+    is_search_link: bool = Field(
+        default=False,
+        description="True when linking to XHS search instead of a specific note",
+    )
 
 
 class DailyReportCard(BaseModel):

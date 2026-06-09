@@ -107,7 +107,13 @@ class Settings(BaseSettings):
         default=3,
         ge=1,
         le=5,
-        description="XHS reference notes per trip day",
+        description="XHS reference notes shown per trip day in the report UI",
+    )
+    justoneapi_xhs_analysis_pool_per_day: int = Field(
+        default=20,
+        ge=1,
+        le=20,
+        description="Max XHS notes collected per day for vision trend analysis (top by likes)",
     )
     justoneapi_xhs_max_calls_per_run: int = Field(
         default=24,

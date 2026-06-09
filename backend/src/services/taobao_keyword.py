@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 from app.utils.enrichment import sanitize_item_text_for_commerce
 from src.services.body_profile import BodyProfile
@@ -10,10 +11,13 @@ from src.services.body_profile import BodyProfile
 # Longer prefixes first so 米白色 matches before 米/白.
 _COLOR_PREFIXES = (
     "米白色",
+    "米色",
     "米白",
     "白色",
     "黑色",
     "薄荷绿",
+    "浅粉色",
+    "浅粉",
     "浅蓝色",
     "深蓝色",
     "浅蓝",
@@ -39,6 +43,7 @@ _COLOR_PREFIXES = (
     "灰",
     "棕",
     "杏",
+    "粉",
 )
 
 # Normalized color key -> title tokens that indicate this color.
@@ -70,30 +75,86 @@ _COLOR_CONFLICTS: dict[str, tuple[str, ...]] = {
 }
 
 
+def _color_key_for_prefix(prefix: str) -> str:
+    if prefix == "卡其":
+        return "卡其"
+    if prefix in {"米白色", "米色", "米白", "米"}:
+        return "米"
+    if prefix in {"白色", "白"}:
+        return "白"
+    if prefix in {"黑色", "黑"}:
+        return "黑"
+    if prefix.startswith("蓝"):
+        return "蓝"
+    if prefix.startswith("绿") or prefix == "薄荷绿":
+        return "绿"
+    if prefix in {"棕色", "咖色"}:
+        return "棕"
+    if prefix in {"灰色", "灰"}:
+        return "灰"
+    if prefix.startswith("粉") or prefix in {"粉色", "浅粉色", "浅粉"}:
+        return "粉"
+    return prefix[0]
+
+
+def extract_color_phrases(text: str) -> list[str]:
+    """Return concrete color phrases from item text for Taobao keywords (e.g. 浅粉色)."""
+    cleaned = re.sub(r"\s+", "", text.strip())
+    found: list[str] = []
+    for prefix in _COLOR_PREFIXES:
+        if prefix in cleaned and prefix not in found:
+            found.append(prefix)
+    return found
+
+
+@dataclass(frozen=True)
+class ItemMaterial:
+    key: str
+    aliases: tuple[str, ...]
+    conflicts: tuple[str, ...]
+
+
+_ITEM_MATERIALS: tuple[ItemMaterial, ...] = (
+    ItemMaterial(
+        "草编",
+        ("草编", "编织", "藤编", "纸编"),
+        ("防水", "尼龙", "牛津布", "PU皮", "PU", "皮革", "真皮", "皮质"),
+    ),
+)
+
+
+def extract_item_materials(text: str) -> list[ItemMaterial]:
+    """Return material cues from outfit item text for Taobao result filtering."""
+    cleaned = re.sub(r"\s+", "", text.strip())
+    found: list[ItemMaterial] = []
+    for material in _ITEM_MATERIALS:
+        if any(token in cleaned for token in (material.key, *material.aliases)):
+            found.append(material)
+    return found
+
+
 def extract_item_colors(text: str) -> list[str]:
     """Return normalized color keys found in outfit item text (e.g. 白, 卡其)."""
     cleaned = re.sub(r"\s+", "", text.strip())
     found: list[str] = []
     for prefix in _COLOR_PREFIXES:
         if prefix in cleaned:
-            key = "卡其" if prefix == "卡其" else prefix[0]
-            if prefix in {"米白色", "米白", "米"}:
-                key = "米"
-            elif prefix in {"白色", "白"}:
-                key = "白"
-            elif prefix in {"黑色", "黑"}:
-                key = "黑"
-            elif prefix.startswith("蓝"):
-                key = "蓝"
-            elif prefix.startswith("绿") or prefix == "薄荷绿":
-                key = "绿"
-            elif prefix in {"棕色", "咖色"}:
-                key = "棕"
-            elif prefix in {"灰色", "灰"}:
-                key = "灰"
+            key = _color_key_for_prefix(prefix)
             if key not in found:
                 found.append(key)
     return found
+
+
+def ensure_keyword_has_item_colors(keyword: str, item_text: str) -> str:
+    """Prepend missing color tokens so Taobao search matches the recommended item."""
+    phrases = extract_color_phrases(item_text)
+    if not phrases:
+        return keyword.strip()
+    cleaned = keyword.strip()
+    missing = [phrase for phrase in phrases if phrase not in cleaned.replace(" ", "")]
+    if not missing:
+        return cleaned
+    return " ".join([*missing, cleaned]).strip()
 
 
 def simplify_item_for_search(text: str, *, max_len: int = 20) -> str:
@@ -134,6 +195,11 @@ def build_item_search_keyword(
             parts.append(token)
     if style:
         parts.append(style.split("、")[0].split(",")[0].strip())
+    color_phrases = extract_color_phrases(item_text)
+    if color_phrases:
+        for phrase in color_phrases:
+            if phrase not in core:
+                core = f"{phrase}{core}"
     parts.append(core)
     keyword = " ".join(part for part in parts if part)
-    return keyword[:max_len]
+    return ensure_keyword_has_item_colors(keyword, item_text)[:max_len]

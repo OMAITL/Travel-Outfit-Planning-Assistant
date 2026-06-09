@@ -42,12 +42,13 @@ def test_ensure_notes_per_day_pads_to_three() -> None:
     assert len(by_date[day2]) == 3
 
 
-def test_ensure_notes_per_day_skips_partial_days() -> None:
+def test_ensure_notes_per_day_keeps_partial_days() -> None:
     day1 = date(2026, 6, 8)
     refs = [_note("a", day=day1, likes=100, keyword="洱海 穿搭")]
     days = [DayItinerary(date=day1, spot_names=["洱海生态廊道"])]
     filled = _ensure_notes_per_day(refs, days, "大理", target_per_day=3)
-    assert filled == []
+    assert len(filled) == 1
+    assert filled[0].note_id == "a"
 
 
 def test_ensure_notes_per_day_no_cross_day_reuse() -> None:

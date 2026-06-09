@@ -18,7 +18,11 @@ from src.graph.state import DailyOutfit, DayOutfitTrend, TripPreferences
 from src.services.budget import budget_for_category, infer_item_category
 from src.services.llm import get_chat_model, invoke_structured, load_prompt
 from src.services.sizing import infer_size_hint
-from src.services.taobao_keyword import build_item_search_keyword, simplify_item_for_search
+from src.services.taobao_keyword import (
+    build_item_search_keyword,
+    ensure_keyword_has_item_colors,
+    simplify_item_for_search,
+)
 
 Category = Literal["top", "bottom", "shoes", "acc"]
 LABEL_TO_CATEGORY: dict[str, Category] = {
@@ -110,12 +114,15 @@ def _merge_llm_plans(
         max_p = cat_budget if cat_budget and cat_budget > 0 else plan.max_price
         search_text = simplify_item_for_search(llm_item.item_text or plan.item_text)
         commerce_text = sanitize_item_text_for_commerce(llm_item.item_text or plan.item_text)
+        raw_keyword = (llm_item.keyword or "").strip() or _fallback_keyword(
+            plan.label, commerce_text, prefs
+        )
+        keyword = ensure_keyword_has_item_colors(raw_keyword, commerce_text)
         merged.append(
             plan.model_copy(
                 update={
                     "item_text": commerce_text,
-                    "keyword": (llm_item.keyword or "").strip()
-                    or _fallback_keyword(plan.label, search_text, prefs),
+                    "keyword": keyword,
                     "max_price": max_p,
                     "size_hint": llm_item.size_hint or size_hint or "",
                 }

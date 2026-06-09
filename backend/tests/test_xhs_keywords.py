@@ -37,7 +37,7 @@ def test_spot_outfit_keyword_combines_profile() -> None:
         body_type="梨型",
         height_cm=158,
     )
-    assert keyword == "洱海 小个子 女生 梨形 休闲 穿搭"
+    assert keyword == "洱海 女生 小个子 梨形 休闲 穿搭"
 
 
 def test_spot_outfit_keyword_skips_unlimited_body_type() -> None:
@@ -57,9 +57,10 @@ def test_build_xhs_search_keywords_one_per_spot() -> None:
         body_type="H型",
         height_cm=172,
         trip_date=date(2026, 7, 10),
+        max_keywords=12,
     )
-    assert keywords[0] == "洱海 高个子 女生 H型 休闲 穿搭"
-    assert keywords[1] == "大理古城 高个子 女生 H型 休闲 穿搭"
+    assert keywords[0] == "洱海 穿搭"
+    assert any("洱海 女生 高个子 H型 休闲 穿搭" == q for q in keywords)
 
 
 def test_build_xhs_search_keywords_city_fallback_without_spots() -> None:
@@ -71,7 +72,7 @@ def test_build_xhs_search_keywords_city_fallback_without_spots() -> None:
         height_cm=155,
         trip_date=date(2026, 7, 10),
     )
-    assert keywords[0] == "东京 小个子 女生 韩系 穿搭"
+    assert keywords[0] == "东京 女生 小个子 韩系 穿搭"
     assert "东京 夏季穿搭" in keywords
 
 

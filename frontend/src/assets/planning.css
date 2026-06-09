@@ -1248,6 +1248,15 @@ textarea {
   color: #64748b;
 }
 
+.xhs-search-fallback {
+  margin-top: 8px;
+}
+
+.xhs-search-link {
+  color: #0f766e;
+  font-weight: 500;
+}
+
 .scores,
 .scores-row {
   display: flex;

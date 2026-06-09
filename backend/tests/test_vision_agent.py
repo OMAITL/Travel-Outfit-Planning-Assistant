@@ -2,7 +2,7 @@
 
 from langchain_core.messages import HumanMessage
 
-from src.graph.nodes.inspiration import _looks_non_outfit
+from src.services.xhs_keywords import note_looks_non_outfit
 from src.services.llm import build_image_human_message
 from src.tools.justone_xhs import XhsNoteSummary
 
@@ -30,15 +30,15 @@ def _note(title: str, desc: str = "") -> XhsNoteSummary:
     )
 
 
-def test_looks_non_outfit_rejects_routes_but_keeps_pose_notes() -> None:
-    assert _looks_non_outfit(_note("大理3日游懒人不绕路游玩攻略！！！附机位"))
-    assert not _looks_non_outfit(_note("提前预习!!!大理拍照姿势（古镇篇）"))
+def test_note_looks_non_outfit_rejects_routes_but_keeps_pose_notes() -> None:
+    assert note_looks_non_outfit(_note("大理3日游懒人不绕路游玩攻略！！！附机位"))
+    assert not note_looks_non_outfit(_note("提前预习!!!大理拍照姿势（古镇篇）"))
 
 
-def test_looks_non_outfit_keeps_outfit_notes() -> None:
+def test_note_looks_non_outfit_keeps_outfit_notes() -> None:
     # Has an outfit cue → kept even if it also mentions 拍照.
-    assert not _looks_non_outfit(_note("洱海边穿搭分享 ootd", desc="白色长裙拍照超出片"))
-    assert not _looks_non_outfit(_note("大理古城超适合洱海的春夏穿搭"))
+    assert not note_looks_non_outfit(_note("洱海边穿搭分享 ootd", desc="白色长裙拍照超出片"))
+    assert not note_looks_non_outfit(_note("大理古城超适合洱海的春夏穿搭"))
 
 
 def test_merge_display_inspirations_backfills_when_vision_filters_all() -> None:

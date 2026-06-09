@@ -84,6 +84,6 @@ def test_xhs_spot_keyword_includes_plus_size() -> None:
         height_cm=165,
         weight_kg=200,
     )
-    assert "大码" in keyword
-    assert "健壮" in keyword
+    assert "大码女生" in keyword or "150斤女生" in keyword
+    assert "健壮" not in keyword
     assert "女生" in keyword

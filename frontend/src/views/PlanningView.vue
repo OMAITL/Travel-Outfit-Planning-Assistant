@@ -55,8 +55,8 @@ onMounted(async () => {
             💬 自由对话
           </button>
         </div>
-        <TripFormPanel v-if="store.inputTab === 'form'" />
-        <ChatPanel v-else />
+        <TripFormPanel v-show="store.inputTab === 'form'" />
+        <ChatPanel v-show="store.inputTab === 'chat'" />
       </aside>
       <ReportPanel />
     </main>

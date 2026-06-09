@@ -62,7 +62,7 @@ class BodyProfile:
         return keywords
 
     def xhs_body_tokens(self) -> list[str]:
-        """At most two body-related tokens for XHS queries."""
+        """At most two body-related tokens for XHS queries (legacy)."""
         tokens: list[str] = []
         if self.is_plus_size:
             tokens.append("大码")
@@ -71,6 +71,29 @@ class BodyProfile:
             tokens.append(label)
         elif self.is_heavyweight:
             tokens.append("加肥加大")
+        return tokens[:2]
+
+    def xhs_search_body_tokens(self) -> list[str]:
+        """小红书搜索专用身材标签 — 避免程序标签如「健壮」."""
+        tokens: list[str] = []
+        gender = (self.gender or "").strip()
+
+        if self.is_heavyweight:
+            if gender == "男":
+                tokens.extend(["大码男生", "大码"])
+            else:
+                tokens.extend(["大码女生", "150斤女生"])
+        elif self.is_plus_size:
+            if gender == "男":
+                tokens.append("微胖男生")
+            else:
+                tokens.extend(["微胖女生", "大码女生"])
+
+        label = body_type_search_token(self.body_type)
+        if label and label not in {"健壮", "偏瘦", "标准", "无", "不限"}:
+            if label not in tokens:
+                tokens.append(label)
+
         return tokens[:2]
 
     def image_subject_zh(self) -> str:

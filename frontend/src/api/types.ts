@@ -69,6 +69,7 @@ export interface StyleReference {
   user_name?: string | null;
   liked_count?: number | null;
   search_keyword?: string | null;
+  is_search_link?: boolean;
 }
 
 export interface DailyReportCard {

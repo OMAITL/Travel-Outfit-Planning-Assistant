@@ -11,6 +11,8 @@ from app.utils.enrichment import (
     sanitize_item_text_for_display,
     sanitize_recommendation_reason,
 )
+from src.graph.nodes.inspiration import _synthetic_search_link_inspirations
+from src.services.itinerary import day_all_spots
 from src.services.travel_tips import build_daily_travel_tips
 from app.utils.product_grouping import assign_products_to_items
 from src.graph.report import DailyReportCard, OutfitItemView, ProductItemGroup, StyleReferenceView, TravelReport
@@ -67,7 +69,30 @@ def _to_style_reference(ref: OutfitInspiration) -> StyleReferenceView:
         user_name=ref.user_name,
         liked_count=ref.liked_count,
         search_keyword=ref.search_keyword,
+        is_search_link=ref.is_search_link,
     )
+
+
+def _style_references_for_day(
+    state: PlanningState,
+    day: date,
+    refs: list[OutfitInspiration],
+    *,
+    day_plan: DayItinerary | None,
+) -> list[StyleReferenceView]:
+    """Use fetched XHS notes; if empty, attach offline search deep-links."""
+    unique = _unique_style_references(refs)
+    if unique or state.trip is None:
+        return unique
+    spots = day_all_spots(day_plan) if day_plan else state.trip.preferences.spot_names
+    synthetic = _synthetic_search_link_inspirations(
+        day,
+        destination=state.trip.destination,
+        spots=spots or [state.trip.destination],
+        prefs=state.trip.preferences,
+        limit=3,
+    )
+    return [_to_style_reference(ref) for ref in synthetic]
 
 
 def _unique_style_references(refs: list[OutfitInspiration], *, limit: int = 3) -> list[StyleReferenceView]:
@@ -213,7 +238,12 @@ def report_node(state: PlanningState) -> PlanningState:
                 look_images_by_spot={
                     name: url for name, url in day_looks.items() if name
                 },
-                style_references=_unique_style_references(inspiration_map.get(day, [])),
+                style_references=_style_references_for_day(
+                    state,
+                    day,
+                    inspiration_map.get(day, []),
+                    day_plan=day_plan,
+                ),
                 products=card_products,
                 degraded=degraded,
             )

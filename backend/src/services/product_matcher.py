@@ -11,6 +11,7 @@ from src.services.taobao_keyword import (
     _COLOR_ALIASES,
     _COLOR_CONFLICTS,
     extract_item_colors,
+    extract_item_materials,
 )
 
 
@@ -58,6 +59,54 @@ def _parse_price(value: Any) -> float:
 def _title_has_color(title: str, color_key: str) -> bool:
     aliases = _COLOR_ALIASES.get(color_key, (color_key,))
     return any(alias in title for alias in aliases)
+
+
+_MENS_TITLE_MARKERS = ("男士", "男装", "男款", "男式", "男包")
+
+
+def _title_conflicts_womens_item(title: str, item_text: str | None) -> bool:
+    """Drop obvious men's listings when the outfit item is not men's wear."""
+    if not item_text:
+        return False
+    if any(marker in item_text for marker in _MENS_TITLE_MARKERS):
+        return False
+    return any(marker in title for marker in _MENS_TITLE_MARKERS)
+
+
+def _title_conflicts_item_materials(title: str, item_text: str | None) -> bool:
+    """True when title material cues conflict with the recommended item (e.g. 草编 vs 防水尼龙)."""
+    if not item_text:
+        return False
+    expected = extract_item_materials(item_text)
+    if not expected:
+        return False
+    has_expected = any(
+        alias in title for material in expected for alias in material.aliases
+    )
+    if has_expected:
+        return False
+    for material in expected:
+        for conflict in material.conflicts:
+            if conflict in title:
+                return True
+    return False
+
+
+def _title_conflicts_item_colors(title: str, item_text: str | None) -> bool:
+    """True when title states a color that clearly conflicts with the outfit item."""
+    if not item_text:
+        return False
+    expected = extract_item_colors(item_text)
+    if not expected:
+        return False
+    has_expected = any(_title_has_color(title, color_key) for color_key in expected)
+    if has_expected:
+        return False
+    for color_key in expected:
+        for conflict in _COLOR_CONFLICTS.get(color_key, ()):
+            if conflict in title:
+                return True
+    return False
 
 
 def color_match_score(title: str, item_text: str | None) -> float:
@@ -119,6 +168,9 @@ def score_product_for_item(
 
     if item_text:
         score += color_match_score(title, item_text)
+        for material in extract_item_materials(item_text):
+            if any(alias in title for alias in material.aliases):
+                score += 25.0
         for token in _item_match_tokens(item_text):
             if token.lower() in title_lower or token in title:
                 score += len(token) * 4.0
@@ -239,6 +291,12 @@ def _rank_candidates(
         if not _is_adult_product(title):
             continue
         if category and not category_compatible(category, title, item_text=item_text or ""):
+            continue
+        if _title_conflicts_item_colors(title, item_text):
+            continue
+        if _title_conflicts_womens_item(title, item_text):
+            continue
+        if _title_conflicts_item_materials(title, item_text):
             continue
         filtered.append(item)
 

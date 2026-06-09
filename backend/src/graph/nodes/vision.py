@@ -43,6 +43,8 @@ def _analysis_shows_outfit(item: NoteOutfitAnalysis) -> bool:
 def _inspirations_by_date(state: PlanningState) -> dict[date, list[OutfitInspiration]]:
     grouped: dict[date, list[OutfitInspiration]] = {}
     for ref in state.outfit_inspirations:
+        if ref.is_search_link:
+            continue
         grouped.setdefault(ref.trip_date, []).append(ref)
     return grouped
 
@@ -118,13 +120,19 @@ def _merge_display_inspirations(
     for day in trip_dates:
         pool = sorted(
             by_date.get(day, []),
-            key=lambda item: item.liked_count or 0,
+            key=lambda item: (not item.is_search_link, item.liked_count or 0),
             reverse=True,
         )
         day_refs: list[OutfitInspiration] = []
         seen_day: set[str] = set()
 
         for ref in pool:
+            if ref.is_search_link:
+                if ref.note_id in seen_day:
+                    continue
+                seen_day.add(ref.note_id)
+                day_refs.append(ref)
+                continue
             if ref.note_id not in outfit_note_ids:
                 continue
             if ref.note_id in seen_day:
@@ -142,7 +150,7 @@ def _merge_display_inspirations(
             seen_day.add(ref.note_id)
             day_refs.append(ref)
 
-        if len(day_refs) >= target_per_day:
+        if day_refs:
             merged.extend(day_refs[:target_per_day])
 
     return merged
@@ -163,16 +171,29 @@ def _finalize_inspirations_for_display(
     )
 
 
+def _top_refs_for_analysis(
+    refs: list[OutfitInspiration],
+    *,
+    limit: int,
+) -> list[OutfitInspiration]:
+    """Keep top-liked notes for vision trend analysis."""
+    ranked = sorted(refs, key=lambda item: item.liked_count or 0, reverse=True)
+    return ranked[:limit]
+
+
 def _analyze_day(
     day: date,
     refs: list[OutfitInspiration],
     *,
     llm=None,
+    max_notes: int | None = None,
 ) -> list[NoteOutfitAnalysis]:
     if not refs:
         return []
 
     settings = get_settings()
+    pool_limit = max_notes or settings.justoneapi_xhs_analysis_pool_per_day
+    refs = _top_refs_for_analysis(refs, limit=pool_limit)
     use_images = settings.vision_use_images and llm is None
     notes_block = _format_notes_for_day(refs)
 
@@ -243,17 +264,24 @@ def vision_node(state: PlanningState, *, llm=None) -> PlanningState:
             level="warning",
         )
 
+    settings = get_settings()
     grouped = _inspirations_by_date(state)
     state = state.append_trace(
         "Vision",
-        f"analyzing outfit elements for {len(grouped)} day(s)",
+        f"analyzing top {settings.justoneapi_xhs_analysis_pool_per_day} liked note(s) "
+        f"for {len(grouped)} day(s)",
     )
 
     trends: list[DayOutfitTrend] = []
     outfit_note_ids: set[str] = set()
     dropped_total = 0
     for day, refs in sorted(grouped.items()):
-        analyses = _analyze_day(day, refs, llm=llm)
+        analyses = _analyze_day(
+            day,
+            refs,
+            llm=llm,
+            max_notes=settings.justoneapi_xhs_analysis_pool_per_day,
+        )
         if not analyses:
             state = state.append_trace(
                 "Vision",
@@ -312,6 +340,8 @@ def vision_node(state: PlanningState, *, llm=None) -> PlanningState:
     update: dict = {"outfit_trends": trends}
     if display_inspirations:
         update["outfit_inspirations"] = display_inspirations
+    elif state.outfit_inspirations:
+        update["outfit_inspirations"] = state.outfit_inspirations
     state = state.append_trace(
         "Vision",
         f"display {len(display_inspirations)} XHS note(s), "

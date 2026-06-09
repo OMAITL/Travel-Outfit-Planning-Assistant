@@ -114,22 +114,20 @@ def _format_trends(state: PlanningState) -> str:
         return "No Xiaohongshu trend data — plan from weather and user preferences only."
     rows = []
     for trend in sorted(state.outfit_trends, key=lambda item: item.date):
-        rows.append(
-            json.dumps(
-                {
-                    "date": str(trend.date),
-                    "dominant_style": trend.dominant_style,
-                    "top_picks": trend.top_picks,
-                    "bottom_picks": trend.bottom_picks,
-                    "shoes_picks": trend.shoes_picks,
-                    "bag_picks": trend.bag_picks,
-                    "acc_picks": trend.acc_picks,
-                    "color_palette": trend.color_palette,
-                    "scene_vibe": trend.scene_vibe,
-                },
-                ensure_ascii=False,
-            )
-        )
+        payload: dict = {
+            "date": str(trend.date),
+            "dominant_style": trend.dominant_style,
+            "top_picks": trend.top_picks,
+            "bottom_picks": trend.bottom_picks,
+            "shoes_picks": trend.shoes_picks,
+            "bag_picks": trend.bag_picks,
+            "acc_picks": trend.acc_picks,
+            "color_palette": trend.color_palette,
+            "scene_vibe": trend.scene_vibe,
+        }
+        if trend.style_profile is not None:
+            payload["style_profile"] = trend.style_profile.model_dump()
+        rows.append(json.dumps(payload, ensure_ascii=False))
     return "\n".join(rows)
 
 

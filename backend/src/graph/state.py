@@ -194,6 +194,10 @@ class OutfitInspiration(BaseModel):
     user_name: str | None = None
     liked_count: int | None = None
     search_keyword: str | None = None
+    is_search_link: bool = Field(
+        default=False,
+        description="True when this row is a Xiaohongshu search deep-link, not a fetched note",
+    )
 
 
 class NoteOutfitAnalysis(BaseModel):
@@ -216,6 +220,19 @@ class NoteOutfitAnalysis(BaseModel):
     image_prompt_en: str = ""
 
 
+class XhsStyleProfile(BaseModel):
+    """Aggregated outfit patterns from top-liked Xiaohongshu notes."""
+
+    top_style: str = ""
+    common_tops: list[str] = Field(default_factory=list)
+    common_bottoms: list[str] = Field(default_factory=list)
+    common_outerwear: list[str] = Field(default_factory=list)
+    common_shoes: list[str] = Field(default_factory=list)
+    common_accessories: list[str] = Field(default_factory=list)
+    recommended_colors: list[str] = Field(default_factory=list)
+    common_silhouettes: list[str] = Field(default_factory=list)
+
+
 class DayOutfitTrend(BaseModel):
     """Aggregated popular outfit trends for one trip day from XHS references."""
 
@@ -230,6 +247,7 @@ class DayOutfitTrend(BaseModel):
     scene_vibe: str = ""
     photo_style: str = ""
     editorial_prompt_en: str = ""
+    style_profile: XhsStyleProfile | None = None
     note_analyses: list[NoteOutfitAnalysis] = Field(default_factory=list)
 
 

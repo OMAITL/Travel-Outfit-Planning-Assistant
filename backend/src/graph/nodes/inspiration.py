@@ -12,13 +12,30 @@ from src.services.outfit_query_compiler import (
     OutfitQueryCompiler,
     OutfitSearchProfile,
     XhsFilterStats,
+    compile_broad_spot_queries,
+    compile_fallback_queries,
+    compile_level1_spot_queries,
+    compile_level2_scene_queries,
+    compile_level3_city_queries,
+    compile_level4_body_style_queries,
     note_rejected_by_profile,
     profile_from_preferences,
 )
+from src.services.xhs_keywords import build_xhs_search_url, note_looks_non_outfit
 from src.tools.justone_client import JustOneApiError
 from src.tools.justone_xhs import XhsNoteSummary, get_xhs_note_detail, search_xhs_notes
 
 logger = logging.getLogger(__name__)
+
+_MAX_DETAIL_FETCHES_PER_KEYWORD = 3
+
+_TIER_SEARCH_STEPS: tuple[tuple[str, object], ...] = (
+    ("一级-景点宽泛", compile_broad_spot_queries),
+    ("一级-景点", compile_level1_spot_queries),
+    ("二级-场景", compile_level2_scene_queries),
+    ("三级-城市", compile_level3_city_queries),
+    ("四级-身材风格", compile_level4_body_style_queries),
+)
 
 
 def _planning_days(state: PlanningState) -> list[DayItinerary]:
@@ -39,30 +56,6 @@ def _merge_note(existing: XhsNoteSummary | None, incoming: XhsNoteSummary) -> Xh
     if (incoming.liked_count or 0) > (existing.liked_count or 0):
         return incoming
     return existing
-
-
-_NON_OUTFIT_HINTS = (
-    "攻略",
-    "路线",
-    "行程",
-    "避雷",
-    "美食",
-    "探店",
-    "门票",
-    "住宿",
-    "民宿",
-    "酒店",
-    "交通",
-    "自驾",
-)
-_OUTFIT_HINTS = ("穿搭", "ootd", "outfit", "搭配", "衣服", "裙", "裤", "上衣", "外套", "鞋", "look", "造型")
-
-
-def _looks_non_outfit(note: XhsNoteSummary) -> bool:
-    text = f"{note.title} {note.desc}".lower()
-    if any(cue in text for cue in _OUTFIT_HINTS):
-        return False
-    return any(bad in text for bad in _NON_OUTFIT_HINTS)
 
 
 def _is_xhs_quota_error(exc: JustOneApiError) -> bool:
@@ -97,7 +90,7 @@ def _note_passes_filters(
     if min_liked and (note.liked_count or 0) < min_liked:
         stats.low_likes += 1
         return False
-    if _looks_non_outfit(note):
+    if note_looks_non_outfit(note):
         stats.non_outfit += 1
         return False
     if note_rejected_by_profile(note, profile):
@@ -129,9 +122,10 @@ def _collect_day_notes(
         try:
             candidates = search_xhs_notes(keyword, include_ads=False)
         except JustOneApiError:
-            raise
+            continue
         calls += 1
 
+        detail_fetches = 0
         for candidate in candidates:
             if len(merged) >= max_notes or calls >= max_api_calls:
                 break
@@ -141,10 +135,15 @@ def _collect_day_notes(
                 continue
 
             note = candidate
-            if fetch_detail and calls < max_api_calls:
+            if (
+                fetch_detail
+                and calls < max_api_calls
+                and detail_fetches < _MAX_DETAIL_FETCHES_PER_KEYWORD
+            ):
                 try:
                     detailed = get_xhs_note_detail(candidate.note_id)
                     calls += 1
+                    detail_fetches += 1
                     if detailed is not None:
                         note = _merge_search_note(candidate, detailed)
                 except JustOneApiError:
@@ -160,6 +159,229 @@ def _collect_day_notes(
         reverse=True,
     )
     return ranked[:max_notes], calls
+
+
+def _profiles_for_day_spots(
+    *,
+    destination: str,
+    spots: list[str],
+    prefs,
+    trip_date,
+) -> list[OutfitSearchProfile]:
+    spot_list = [spot.strip() for spot in spots if spot.strip()] or [destination]
+    return [
+        profile_from_preferences(
+            prefs,
+            destination=destination,
+            spot=spot,
+            trip_date=trip_date,
+        )
+        for spot in spot_list
+    ]
+
+
+def _collect_day_notes_tiered(
+    profiles: list[OutfitSearchProfile],
+    *,
+    max_notes: int,
+    fetch_detail: bool,
+    max_api_calls: int,
+    min_liked: int,
+    exclude_note_ids: set[str] | None = None,
+    stats_by_spot: dict[str, XhsFilterStats] | None = None,
+    tried_keywords: set[str] | None = None,
+    stop_after_notes: int | None = None,
+) -> tuple[list[tuple[XhsNoteSummary, str]], int, set[str], list[str]]:
+    """
+    Run backup rules tier-by-tier (景点宽泛 → 景点 → 场景 → 城市 → 身材).
+
+    Stops escalating to the next tier once ``stop_after_notes`` is reached so
+    broader fallbacks are not skipped due to API budget exhaustion on strict queries.
+    """
+    tried = set(tried_keywords or ())
+    tier_traces: list[str] = []
+    collected: list[tuple[XhsNoteSummary, str]] = []
+    calls = 0
+    stop_target = stop_after_notes if stop_after_notes is not None else max_notes
+
+    for tier_label, tier_fn in _TIER_SEARCH_STEPS:
+        if calls >= max_api_calls or len(collected) >= max_notes:
+            break
+        if len(collected) >= stop_target:
+            break
+
+        tier_plan: list[tuple[str, OutfitSearchProfile]] = []
+        for profile in profiles:
+            for query, _tier in tier_fn(profile):
+                if query in tried:
+                    continue
+                tried.add(query)
+                tier_plan.append((query, profile))
+
+        if not tier_plan:
+            continue
+
+        notes, used = _collect_day_notes(
+            tier_plan,
+            max_notes=max_notes - len(collected),
+            fetch_detail=fetch_detail,
+            max_api_calls=max_api_calls - calls,
+            min_liked=min_liked,
+            exclude_note_ids=exclude_note_ids,
+            stats_by_spot=stats_by_spot,
+        )
+        calls += used
+        collected.extend(notes)
+        tier_traces.append(
+            f"{tier_label}: +{len(notes)} note(s) from {len(tier_plan)} query(ies), {used} call(s)"
+        )
+
+    seen_ids: set[str] = set()
+    ranked: list[tuple[XhsNoteSummary, str]] = []
+    for note, keyword in sorted(
+        collected,
+        key=lambda pair: pair[0].liked_count or 0,
+        reverse=True,
+    ):
+        if note.note_id in seen_ids:
+            continue
+        seen_ids.add(note.note_id)
+        ranked.append((note, keyword))
+        if len(ranked) >= max_notes:
+            break
+    return ranked, calls, tried, tier_traces
+
+
+def _append_inspiration(
+    inspirations: list[OutfitInspiration],
+    *,
+    trip_date,
+    note: XhsNoteSummary,
+    search_keyword: str,
+    assigned_ids: set[str],
+) -> bool:
+    if note.note_id in assigned_ids:
+        return False
+    assigned_ids.add(note.note_id)
+    inspirations.append(
+        OutfitInspiration(
+            trip_date=trip_date,
+            note_id=note.note_id,
+            title=note.title,
+            desc=note.desc,
+            cover_url=note.cover_url,
+            image_urls=note.image_urls[:6],
+            note_url=note.note_url,
+            user_name=note.user_name,
+            liked_count=note.liked_count,
+            search_keyword=search_keyword,
+        )
+    )
+    return True
+
+
+def _synthetic_search_link_inspirations(
+    trip_date,
+    *,
+    destination: str,
+    spots: list[str],
+    prefs,
+    limit: int = 3,
+) -> list[OutfitInspiration]:
+    """When API search finds nothing, offer clickable XHS search queries instead."""
+    keywords: list[str] = []
+    seen: set[str] = set()
+    spot_list = [spot.strip() for spot in spots if spot.strip()] or [destination]
+
+    for spot in spot_list:
+        profile = profile_from_preferences(
+            prefs,
+            destination=destination,
+            spot=spot,
+            trip_date=trip_date,
+        )
+        for keyword in compile_fallback_queries(profile):
+            if keyword not in seen:
+                seen.add(keyword)
+                keywords.append(keyword)
+            if len(keywords) >= limit:
+                break
+        if len(keywords) >= limit:
+            break
+
+    links: list[OutfitInspiration] = []
+    for index, keyword in enumerate(keywords[:limit]):
+        links.append(
+            OutfitInspiration(
+                trip_date=trip_date,
+                note_id=f"search:{trip_date}:{index}",
+                title=f"在小红书搜索「{keyword}」",
+                desc="未找到直接匹配的笔记，点击跳转小红书搜索结果页自行浏览参考。",
+                note_url=build_xhs_search_url(keyword),
+                search_keyword=keyword,
+                is_search_link=True,
+            )
+        )
+    return links
+
+
+def _run_api_fallback_ladder(
+    *,
+    trip_date,
+    destination: str,
+    spots: list[str],
+    prefs,
+    inspirations: list[OutfitInspiration],
+    assigned_ids: set[str],
+    max_notes: int,
+    fetch_detail: bool,
+    max_api_calls: int,
+    min_liked: int,
+    tried_keywords: set[str] | None = None,
+) -> tuple[int, int, list[str]]:
+    """Continue tiered API search with queries not yet tried (incl. lower-priority tiers)."""
+    if max_api_calls <= 0:
+        return 0, 0, []
+
+    day_count = len([r for r in inspirations if r.trip_date == trip_date])
+    if day_count >= max_notes:
+        return 0, 0, []
+
+    profiles = _profiles_for_day_spots(
+        destination=destination,
+        spots=spots,
+        prefs=prefs,
+        trip_date=trip_date,
+    )
+    stats: dict[str, XhsFilterStats] = defaultdict(XhsFilterStats)
+    try:
+        notes, used, _tried, traces = _collect_day_notes_tiered(
+            profiles,
+            max_notes=max_notes - day_count,
+            fetch_detail=fetch_detail,
+            max_api_calls=max_api_calls,
+            min_liked=min_liked,
+            exclude_note_ids=assigned_ids,
+            stats_by_spot=stats,
+            tried_keywords=tried_keywords,
+            stop_after_notes=max_notes - day_count,
+        )
+    except JustOneApiError:
+        return 0, 0, []
+
+    added = 0
+    for note, search_keyword in notes:
+        if len([r for r in inspirations if r.trip_date == trip_date]) >= max_notes:
+            break
+        if _append_inspiration(
+            inspirations,
+            trip_date=trip_date,
+            note=note,
+            search_keyword=search_keyword,
+            assigned_ids=assigned_ids,
+        ):
+            added += 1
+    return added, used, traces
 
 
 def _debug_entry_from_compile(
@@ -183,25 +405,140 @@ def _debug_entry_from_compile(
     )
 
 
+def _compile_by_spot_for_day(
+    *,
+    compiler: OutfitQueryCompiler,
+    trip,
+    prefs,
+    trip_date,
+    day_spots: list[str],
+) -> dict[str, object]:
+    return {
+        spot: compiler.compile(
+            profile_from_preferences(
+                prefs,
+                destination=trip.destination,
+                spot=spot,
+                trip_date=trip_date,
+            )
+        )
+        for spot in day_spots
+    }
+
+
+def _append_day_query_debug(
+    state: PlanningState,
+    query_debug: list[XhsQueryDebugEntry],
+    *,
+    trip_date,
+    day_spots: list[str],
+    compiled_by_spot: dict[str, object],
+    stats_by_spot: dict[str, XhsFilterStats],
+    notes_by_spot: dict[str, int],
+) -> PlanningState:
+    """Always record compiler debug rows so the report UI can show XHS diagnostics."""
+    for spot in day_spots:
+        compiled = compiled_by_spot.get(spot)
+        if compiled is None:
+            continue
+        entry = _debug_entry_from_compile(
+            trip_date,
+            compiled,
+            stats_by_spot.get(spot, XhsFilterStats()),
+            notes_by_spot.get(spot, 0),
+        )
+        query_debug.append(entry)
+        token_summary = " · ".join(f"{t['rule']}:{t['token']}" for t in entry.base_tokens)
+        state = state.append_trace(
+            "QueryCompiler",
+            f"{trip_date} @{spot} →「{entry.final_query}」"
+            f" | 规则[{token_summary}]"
+            f" | 过滤(雷点{entry.filtered_avoid}/非穿搭{entry.filtered_non_outfit})"
+            f" | 保留{entry.notes_kept}条",
+        )
+    return state
+
+
+def _query_debug_for_trip_days(
+    days: list[DayItinerary],
+    *,
+    trip,
+    prefs,
+    compiler: OutfitQueryCompiler | None = None,
+) -> list[XhsQueryDebugEntry]:
+    compiler = compiler or OutfitQueryCompiler()
+    rows: list[XhsQueryDebugEntry] = []
+    for row in days:
+        day_spots = day_all_spots(row) or prefs.spot_names or [trip.destination]
+        compiled_by_spot = _compile_by_spot_for_day(
+            compiler=compiler,
+            trip=trip,
+            prefs=prefs,
+            trip_date=row.date,
+            day_spots=day_spots,
+        )
+        notes_by_spot: dict[str, int] = defaultdict(int)
+        for spot in day_spots:
+            entry = _debug_entry_from_compile(
+                row.date,
+                compiled_by_spot[spot],
+                XhsFilterStats(),
+                notes_by_spot.get(spot, 0),
+            )
+            rows.append(entry)
+    return rows
+
+
+def _synthetic_links_for_trip(
+    days: list[DayItinerary],
+    *,
+    destination: str,
+    prefs,
+    limit_per_day: int = 3,
+) -> list[OutfitInspiration]:
+    """Offline fallback: tiered search keywords as clickable XHS deep-links."""
+    links: list[OutfitInspiration] = []
+    for row in days:
+        day_spots = day_all_spots(row) or prefs.spot_names or [destination]
+        links.extend(
+            _synthetic_search_link_inspirations(
+                row.date,
+                destination=destination,
+                spots=day_spots,
+                prefs=prefs,
+                limit=limit_per_day,
+            )
+        )
+    return links
+
+
 def inspiration_node(state: PlanningState) -> PlanningState:
     if state.trip is None or not state.trip.is_complete:
         return state.append_trace("Inspiration", "skipped: trip not ready", level="warning")
 
     settings = get_settings()
-    if not settings.justoneapi_token:
-        return state.append_trace(
-            "Inspiration",
-            "skipped: JUSTONEAPI_TOKEN missing",
-            level="warning",
-        )
-
     trip = state.trip
     prefs = trip.preferences
     days = _planning_days(state)
     if not days:
         return state.append_trace("Inspiration", "skipped: no trip days", level="warning")
 
-    max_notes = settings.justoneapi_xhs_notes_per_day
+    if not settings.justoneapi_token:
+        synthetic = _synthetic_links_for_trip(
+            days,
+            destination=trip.destination,
+            prefs=prefs,
+            limit_per_day=settings.justoneapi_xhs_notes_per_day,
+        )
+        query_debug = _query_debug_for_trip_days(days, trip=trip, prefs=prefs)
+        return state.append_trace(
+            "Inspiration",
+            f"JUSTONEAPI_TOKEN missing — using {len(synthetic)} offline XHS search link(s)",
+            level="warning",
+        ).model_copy(update={"outfit_inspirations": synthetic, "xhs_query_debug": query_debug})
+
+    display_notes = settings.justoneapi_xhs_notes_per_day
+    analysis_pool = settings.justoneapi_xhs_analysis_pool_per_day
     max_calls = settings.justoneapi_xhs_max_calls_per_run
     fetch_detail = settings.justoneapi_xhs_fetch_detail
     min_liked = settings.justoneapi_xhs_min_liked
@@ -215,7 +552,8 @@ def inspiration_node(state: PlanningState) -> PlanningState:
     state = state.append_trace(
         "Inspiration",
         f"XHS Query Compiler: {len(days)} day(s), "
-        f"target {max_notes} note(s)/day, llm_expand={settings.xhs_query_llm_expand}",
+        f"collect up to {analysis_pool} note(s)/day for analysis, "
+        f"display {display_notes}, llm_expand={settings.xhs_query_llm_expand}",
     )
 
     for row in days:
@@ -223,29 +561,25 @@ def inspiration_node(state: PlanningState) -> PlanningState:
             break
 
         day_spots = day_all_spots(row) or prefs.spot_names or [trip.destination]
-        query_rows = compiler.compile_queries_for_spots(
-            prefs,
+        day_profiles = _profiles_for_day_spots(
             destination=trip.destination,
             spots=day_spots,
+            prefs=prefs,
             trip_date=row.date,
         )
-        if not query_rows:
-            profile = profile_from_preferences(
-                prefs,
-                destination=trip.destination,
-                spot=trip.destination,
-                trip_date=row.date,
-            )
-            compiled = compiler.compile(profile)
-            query_rows = [(compiled.final_query, compiled)]
-
-        query_plan = [(keyword, compiled.profile) for keyword, compiled in query_rows]
         stats_by_spot: dict[str, XhsFilterStats] = defaultdict(XhsFilterStats)
-        compiled_by_spot = {compiled.profile.spot: compiled for _, compiled in query_rows}
+        compiled_by_spot = _compile_by_spot_for_day(
+            compiler=compiler,
+            trip=trip,
+            prefs=prefs,
+            trip_date=row.date,
+            day_spots=day_spots,
+        )
+        tried_keywords: set[str] = set()
 
         detail_budget = 1 if fetch_detail else 0
         calls_per_day = max(
-            len(query_plan) + max_notes * (1 + detail_budget),
+            len(_TIER_SEARCH_STEPS) * max(len(day_spots), 1) + analysis_pool * (1 + detail_budget),
             max_calls // max(len(days), 1),
         )
         remaining = min(calls_per_day, max_calls - calls_used)
@@ -253,14 +587,15 @@ def inspiration_node(state: PlanningState) -> PlanningState:
             break
         day_assigned_ids = {r.note_id for r in inspirations if r.trip_date == row.date}
         try:
-            notes, used = _collect_day_notes(
-                query_plan,
-                max_notes=max_notes,
+            notes, used, tried_keywords, tier_traces = _collect_day_notes_tiered(
+                day_profiles,
+                max_notes=analysis_pool,
                 fetch_detail=fetch_detail,
                 max_api_calls=remaining,
                 min_liked=min_liked,
                 exclude_note_ids=day_assigned_ids,
                 stats_by_spot=stats_by_spot,
+                stop_after_notes=display_notes,
             )
         except JustOneApiError as exc:
             if _is_xhs_quota_error(exc):
@@ -274,18 +609,38 @@ def inspiration_node(state: PlanningState) -> PlanningState:
                     level="warning",
                 )
             )
+            notes_by_spot: dict[str, int] = defaultdict(int)
+            state = _append_day_query_debug(
+                state,
+                query_debug,
+                trip_date=row.date,
+                day_spots=day_spots,
+                compiled_by_spot=compiled_by_spot,
+                stats_by_spot=stats_by_spot,
+                notes_by_spot=notes_by_spot,
+            )
             continue
 
         calls_used += used
+        for trace_line in tier_traces:
+            state = state.append_trace("QueryCompiler", f"{row.date}: {trace_line}")
+        if not tier_traces:
+            state = state.append_trace(
+                "QueryCompiler",
+                f"{row.date}: tiered search produced no API attempts (budget exhausted?)",
+                level="warning",
+            )
+
         notes_by_spot: dict[str, int] = defaultdict(int)
         for note, search_keyword in notes:
             if note.note_id in day_assigned_ids:
                 continue
             day_assigned_ids.add(note.note_id)
-            matched_spot = next(
-                (compiled.profile.spot for kw, compiled in query_rows if kw == search_keyword),
-                day_spots[0],
-            )
+            matched_spot = day_spots[0]
+            for profile in day_profiles:
+                if profile.spot and profile.spot in search_keyword:
+                    matched_spot = profile.spot
+                    break
             notes_by_spot[matched_spot] += 1
             inspirations.append(
                 OutfitInspiration(
@@ -302,104 +657,43 @@ def inspiration_node(state: PlanningState) -> PlanningState:
                 )
             )
 
-        for spot in day_spots:
-            compiled = compiled_by_spot.get(spot) or compiler.compile(
-                profile_from_preferences(
-                    prefs,
-                    destination=trip.destination,
-                    spot=spot,
-                    trip_date=row.date,
-                )
-            )
-            entry = _debug_entry_from_compile(
-                row.date,
-                compiled,
-                stats_by_spot.get(spot, XhsFilterStats()),
-                notes_by_spot.get(spot, 0),
-            )
-            query_debug.append(entry)
-            token_summary = " · ".join(f"{t['rule']}:{t['token']}" for t in entry.base_tokens)
-            state = state.append_trace(
-                "QueryCompiler",
-                f"{row.date} @{spot} →「{entry.final_query}」"
-                f" | 规则[{token_summary}]"
-                f" | 过滤(雷点{entry.filtered_avoid}/非穿搭{entry.filtered_non_outfit})"
-                f" | 保留{entry.notes_kept}条",
-            )
-
-        if len(notes) < max_notes and calls_used < max_calls:
-            for spot in day_spots:
-                if len([r for r in inspirations if r.trip_date == row.date]) >= max_notes:
-                    break
-                if calls_used >= max_calls:
-                    break
-                profile = profile_from_preferences(
-                    prefs,
-                    destination=trip.destination,
-                    spot=spot,
-                    trip_date=row.date,
-                )
-                compiled = compiler.compile(profile)
-                extra_plan = [(compiled.final_query, profile)]
-                extra_remaining = min(2, max_calls - calls_used)
-                extra_stats: dict[str, XhsFilterStats] = defaultdict(XhsFilterStats)
-                try:
-                    extra_notes, extra_used = _collect_day_notes(
-                        extra_plan,
-                        max_notes=max_notes,
-                        fetch_detail=fetch_detail,
-                        max_api_calls=extra_remaining,
-                        min_liked=min_liked,
-                        exclude_note_ids=day_assigned_ids,
-                        stats_by_spot=extra_stats,
-                    )
-                except JustOneApiError:
-                    break
-                calls_used += extra_used
-                for note, search_keyword in extra_notes:
-                    if note.note_id in day_assigned_ids:
-                        continue
-                    day_count = len([r for r in inspirations if r.trip_date == row.date])
-                    if day_count >= max_notes:
-                        break
-                    day_assigned_ids.add(note.note_id)
-                    inspirations.append(
-                        OutfitInspiration(
-                            trip_date=row.date,
-                            note_id=note.note_id,
-                            title=note.title,
-                            desc=note.desc,
-                            cover_url=note.cover_url,
-                            image_urls=note.image_urls[:6],
-                            note_url=note.note_url,
-                            user_name=note.user_name,
-                            liked_count=note.liked_count,
-                            search_keyword=search_keyword,
-                        )
-                    )
+        state = _append_day_query_debug(
+            state,
+            query_debug,
+            trip_date=row.date,
+            day_spots=day_spots,
+            compiled_by_spot=compiled_by_spot,
+            stats_by_spot=stats_by_spot,
+            notes_by_spot=notes_by_spot,
+        )
 
         day_count = len([r for r in inspirations if r.trip_date == row.date])
-        if day_count < max_notes and min_liked > 0 and calls_used < max_calls:
-            relaxed_remaining = min(max_calls - calls_used, max_notes * 2)
-            relaxed_stats: dict[str, XhsFilterStats] = defaultdict(XhsFilterStats)
+
+        if day_count < display_notes and min_liked > 0 and calls_used < max_calls:
+            retry_remaining = max_calls - calls_used
             try:
-                relaxed_notes, relaxed_used = _collect_day_notes(
-                    query_plan,
-                    max_notes=max_notes - day_count,
+                retry_notes, retry_used, tried_keywords, retry_traces = _collect_day_notes_tiered(
+                    day_profiles,
+                    max_notes=analysis_pool - day_count,
                     fetch_detail=fetch_detail,
-                    max_api_calls=relaxed_remaining,
+                    max_api_calls=retry_remaining,
                     min_liked=0,
                     exclude_note_ids=day_assigned_ids,
-                    stats_by_spot=relaxed_stats,
+                    stats_by_spot=stats_by_spot,
+                    tried_keywords=set(),
+                    stop_after_notes=display_notes - day_count,
                 )
             except JustOneApiError:
-                relaxed_notes, relaxed_used = [], 0
-            calls_used += relaxed_used
-            for note, search_keyword in relaxed_notes:
+                retry_notes, retry_used, retry_traces = [], 0, []
+            calls_used += retry_used
+            for trace_line in retry_traces:
+                state = state.append_trace(
+                    "QueryCompiler",
+                    f"{row.date} (放宽点赞): {trace_line}",
+                )
+            for note, search_keyword in retry_notes:
                 if note.note_id in day_assigned_ids:
                     continue
-                if len([r for r in inspirations if r.trip_date == row.date]) >= max_notes:
-                    break
                 day_assigned_ids.add(note.note_id)
                 inspirations.append(
                     OutfitInspiration(
@@ -415,30 +709,66 @@ def inspiration_node(state: PlanningState) -> PlanningState:
                         search_keyword=search_keyword,
                     )
                 )
-            if relaxed_notes:
-                state = state.append_trace(
-                    "Inspiration",
-                    f"{row.date}: relaxed min_liked to 0, added {len(relaxed_notes)} note(s)",
-                )
             day_count = len([r for r in inspirations if r.trip_date == row.date])
 
-        if day_count < max_notes:
+        if day_count < display_notes:
             logger.warning(
                 "XHS notes incomplete for %s: got %d/%d (calls_used=%d/%d, quota=%s)",
                 row.date,
                 day_count,
-                max_notes,
+                display_notes,
                 calls_used,
                 max_calls,
                 xhs_quota_exceeded,
             )
-            inspirations = [r for r in inspirations if r.trip_date != row.date]
-            state = state.append_trace(
-                "Inspiration",
-                f"{row.date}: only {day_count}/{max_notes} XHS notes — cleared for UI "
-                f"(quota={'yes' if xhs_quota_exceeded or calls_used >= max_calls else 'filter/budget'})",
-                level="warning",
-            )
+            remaining = max_calls - calls_used
+            if remaining > 0:
+                added, used, fb_traces = _run_api_fallback_ladder(
+                    trip_date=row.date,
+                    destination=trip.destination,
+                    spots=day_spots,
+                    prefs=prefs,
+                    inspirations=inspirations,
+                    assigned_ids=day_assigned_ids,
+                    max_notes=analysis_pool,
+                    fetch_detail=fetch_detail,
+                    max_api_calls=remaining,
+                    min_liked=0,
+                    tried_keywords=tried_keywords,
+                )
+                calls_used += used
+                for trace_line in fb_traces:
+                    state = state.append_trace(
+                        "QueryCompiler",
+                        f"{row.date} (备用降级): {trace_line}",
+                    )
+                if added:
+                    state = state.append_trace(
+                        "Inspiration",
+                        f"{row.date}: fallback ladder added {added} note(s)",
+                    )
+                day_count = len([r for r in inspirations if r.trip_date == row.date])
+
+            if day_count == 0:
+                synthetic = _synthetic_search_link_inspirations(
+                    row.date,
+                    destination=trip.destination,
+                    spots=day_spots,
+                    prefs=prefs,
+                    limit=3,
+                )
+                if synthetic:
+                    inspirations.extend(synthetic)
+                    state = state.append_trace(
+                        "Inspiration",
+                        f"{row.date}: using {len(synthetic)} Xiaohongshu search link(s) as fallback",
+                    )
+            elif day_count < display_notes:
+                state = state.append_trace(
+                    "Inspiration",
+                    f"{row.date}: kept {day_count} note(s) for analysis (display target {display_notes})",
+                    level="warning",
+                )
 
     if xhs_quota_exceeded:
         logger.warning(
@@ -446,6 +776,23 @@ def inspiration_node(state: PlanningState) -> PlanningState:
             calls_used,
             max_calls,
         )
+
+    if not inspirations:
+        inspirations = _synthetic_links_for_trip(
+            days,
+            destination=trip.destination,
+            prefs=prefs,
+            limit_per_day=display_notes,
+        )
+        if inspirations:
+            state = state.append_trace(
+                "Inspiration",
+                f"no API notes — attached {len(inspirations)} offline XHS search link(s)",
+                level="warning",
+            )
+
+    if not query_debug:
+        query_debug = _query_debug_for_trip_days(days, trip=trip, prefs=prefs, compiler=compiler)
 
     state = state.append_trace(
         "Inspiration",
@@ -455,7 +802,7 @@ def inspiration_node(state: PlanningState) -> PlanningState:
         inspirations,
         days,
         trip.destination,
-        target_per_day=max_notes,
+        target_per_day=analysis_pool,
     )
     return state.model_copy(
         update={"outfit_inspirations": inspirations, "xhs_query_debug": query_debug}
@@ -492,7 +839,7 @@ def _ensure_notes_per_day(
             day_refs.append(ref)
             if len(day_refs) >= target_per_day:
                 break
-        if len(day_refs) >= target_per_day:
+        if day_refs:
             normalized.extend(day_refs[:target_per_day])
 
     return normalized

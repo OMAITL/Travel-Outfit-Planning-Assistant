@@ -364,39 +364,81 @@ const items = computed(() => {
   );
 });
 
-const scores = computed(() => [
-  "风格 ★★★★☆",
-  "舒适 ★★★★★",
-  "出片 ★★★★☆",
-  "配色 白·卡其·蓝",
-]);
+const COLOR_HINTS = [
+  "米白色",
+  "米白",
+  "浅粉色",
+  "浅粉",
+  "深蓝色",
+  "浅蓝色",
+  "白色",
+  "黑色",
+  "粉色",
+  "蓝色",
+  "绿色",
+  "红色",
+  "黄色",
+  "紫色",
+  "灰色",
+  "卡其",
+  "棕色",
+  "杏色",
+];
+
+function extractPaletteLabels(text: string): string[] {
+  const cleaned = text.replace(/\s+/g, "");
+  const found: string[] = [];
+  for (const hint of COLOR_HINTS) {
+    if (cleaned.includes(hint) && !found.includes(hint)) {
+      found.push(hint.replace(/^浅/, "").slice(0, 1) || hint);
+    }
+    if (found.length >= 4) break;
+  }
+  return found;
+}
+
+const scores = computed(() => {
+  const outfitText =
+    props.card?.outfit?.outfit_summary ||
+    items.value.map((item) => item.text).join(" ");
+  const palette = extractPaletteLabels(outfitText);
+  const paletteLabel = palette.length ? palette.join("·") : "中性";
+  return [
+    "风格 ★★★★☆",
+    "舒适 ★★★★★",
+    "出片 ★★★★☆",
+    `配色 ${paletteLabel}`,
+  ];
+});
 
 const styleReferences = computed(() => props.card?.style_references ?? []);
 
+const xhsNoteReferences = computed(() =>
+  styleReferences.value.filter((ref) => !ref.is_search_link),
+);
+
+const xhsSearchFallbacks = computed(() =>
+  styleReferences.value.filter((ref) => ref.is_search_link),
+);
+
 const xhsSourceHint = computed(() => {
   if (!props.card?.outfit) return "";
-  const refs = styleReferences.value;
-  if (refs.length > 0) {
-    if (refs.length < 3 && typeof console !== "undefined") {
-      console.warn("[XHS] fewer than 3 reference notes", {
-        count: refs.length,
-        trace: store.state?.trace?.filter((t) => t.agent === "Inspiration"),
-      });
-    }
-    return "";
-  }
-  if (typeof console !== "undefined") {
-    console.warn("[XHS] no reference notes for this day", {
-      errors: store.state?.errors,
-      trace: store.state?.trace?.filter((t) => t.agent === "Inspiration"),
-    });
-  }
+  if (styleReferences.value.length > 0) return "";
   return "暂未找到匹配的小红书穿搭参考，不影响当日 AI 穿搭推荐。";
 });
 
 const xhsPartialHint = computed(() => {
-  const n = styleReferences.value.length;
-  if (n > 0 && n < 3) return `已精选 ${n} 条高赞穿搭笔记供参考`;
+  const notes = xhsNoteReferences.value.length;
+  const fallbacks = xhsSearchFallbacks.value.length;
+  if (notes > 0 && notes < 3) {
+    return `已精选 ${notes} 条高赞穿搭笔记供参考`;
+  }
+  if (notes === 0 && fallbacks > 0) {
+    return "未找到直接匹配的笔记，以下为推荐搜索词，点击可跳转小红书自行浏览";
+  }
+  if (notes > 0 && fallbacks > 0) {
+    return `已精选 ${notes} 条笔记，并附 ${fallbacks} 个备用搜索词`;
+  }
   return "";
 });
 
@@ -512,8 +554,8 @@ function goTryon() {
           </div>
           <div v-if="styleReferences.length || xhsSourceHint" class="section">
             <div class="section-title">小红书穿搭参考</div>
-            <ul v-if="styleReferences.length" class="xhs-ref-list">
-              <li v-for="ref in styleReferences" :key="ref.note_id">
+            <ul v-if="xhsNoteReferences.length" class="xhs-ref-list">
+              <li v-for="ref in xhsNoteReferences" :key="ref.note_id">
                 <a
                   class="xhs-ref-link"
                   :href="ref.note_url || '#'"
@@ -522,6 +564,18 @@ function goTryon() {
                 >
                   {{ ref.title || "小红书笔记" }}
                   <span v-if="ref.user_name"> · @{{ ref.user_name }}</span>
+                </a>
+              </li>
+            </ul>
+            <ul v-if="xhsSearchFallbacks.length" class="xhs-ref-list xhs-search-fallback">
+              <li v-for="ref in xhsSearchFallbacks" :key="ref.note_id">
+                <a
+                  class="xhs-ref-link xhs-search-link"
+                  :href="ref.note_url || '#'"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  🔍 {{ ref.title || ref.search_keyword || "小红书搜索" }}
                 </a>
               </li>
             </ul>
@@ -586,12 +640,6 @@ function goTryon() {
           class="product-item-section"
         >
         <div class="product-item-head">
-          <span
-            class="product-item-badge"
-            :class="sectionIndex === 0 ? 'primary' : 'secondary'"
-          >
-            {{ sectionIndex === 0 ? "当前单品" : "其他单品" }}
-          </span>
           <span class="product-item-name">
             对应单品 {{ sectionIndex + 1 }}：{{ section.itemText }}
           </span>

@@ -9,7 +9,12 @@ from src.config import get_settings
 from src.graph.state import PlanningState, ProductCard, TripPreferences
 from src.services.product_matcher import pick_top_n
 from src.services.search_enrichment import ShoppingSearchItem, enrich_search_plans
-from src.services.taobao_keyword import build_item_search_keyword, simplify_item_for_search
+from src.services.taobao_keyword import (
+    build_item_search_keyword,
+    ensure_keyword_has_item_colors,
+    extract_color_phrases,
+    simplify_item_for_search,
+)
 from src.tools.product_search import ProductSearchError, search_products
 
 MAX_PER_ITEM = 3
@@ -35,29 +40,52 @@ def _search_keyword(
 
 
 def _keyword_variants(plan: ShoppingSearchItem, prefs: TripPreferences) -> list[str]:
-    full = build_item_search_keyword(
-        plan.item_text,
-        gender=prefs.gender,
-        style=prefs.style,
-    )
+    profile_kwargs = {
+        "gender": prefs.gender,
+        "style": prefs.style,
+        "height_cm": prefs.height_cm,
+        "weight_kg": prefs.weight_kg,
+        "body_type": prefs.body_type,
+    }
+    full = build_item_search_keyword(plan.item_text, **profile_kwargs)
     core = simplify_item_for_search(plan.item_text)
-    variants = [plan.keyword.strip(), full]
+    color_first = " ".join(
+        part
+        for part in [
+            prefs.gender if prefs.gender not in {None, "", "不限"} else "女",
+            " ".join(extract_color_phrases(plan.item_text)),
+            core,
+        ]
+        if part
+    )[:50]
+    color_first = ensure_keyword_has_item_colors(color_first, plan.item_text)
+    variants = [
+        ensure_keyword_has_item_colors(plan.keyword.strip(), plan.item_text),
+        color_first,
+        full,
+    ]
     if core and core not in variants:
-        variants.append(
-            build_item_search_keyword(core, gender=prefs.gender, style=prefs.style)
-        )
+        variants.append(build_item_search_keyword(core, **profile_kwargs))
     short = " ".join(
         part
         for part in [
             prefs.gender if prefs.gender not in {None, "", "不限"} else "女",
             (prefs.style or "休闲").split("、")[0],
+            " ".join(extract_color_phrases(plan.item_text)),
             core,
         ]
         if part
     )[:50]
     if short and short not in variants:
-        variants.append(short)
-    return variants
+        variants.append(ensure_keyword_has_item_colors(short, plan.item_text))
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for keyword in variants:
+        cleaned = keyword.strip()
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            ordered.append(cleaned)
+    return ordered
 
 
 def _search_and_pick(
