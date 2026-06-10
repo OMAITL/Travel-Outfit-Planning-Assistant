@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自由对话 × 行程报告 — 交互原型</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf7f2;
+      --surface: #ffffff;
+      --ink: #1c1917;
+      --muted: #78716c;
+      --accent: #e85d4c;
+      --accent-soft: #fde8e4;
+      --sage: #6b9080;
+      --sand: #e7e0d5;
+      --blue-soft: #e0f2fe;
+      --blue-ink: #0369a1;
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(28, 25, 23, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+
+    /* ── 原型控制条 ── */
+    .proto-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #1c1917;
+      color: #faf7f2;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+    }
+    .proto-bar strong { color: #fbbf24; }
+    .proto-bar label { color: #a8a29e; margin-right: 4px; }
+    .proto-states {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .proto-states button {
+      border: 1px solid #57534e;
+      background: transparent;
+      color: #e7e5e4;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.78rem;
+      transition: all 0.15s;
+    }
+    .proto-states button:hover { border-color: #fbbf24; color: #fbbf24; }
+    .proto-states button.active {
+      background: #fbbf24;
+      color: #1c1917;
+      border-color: #fbbf24;
+      font-weight: 600;
+    }
+    .proto-hint {
+      margin-left: auto;
+      color: #a8a29e;
+      font-size: 0.75rem;
+      max-width: 360px;
+    }
+
+    /* ── 页面结构 ── */
+    .hero {
+      background: linear-gradient(135deg, #fff8f5 0%, #f5efe6 100%);
+      border-bottom: 1px solid var(--sand);
+      padding: 10px 32px 8px;
+    }
+    .hero-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .hero h1 { font-size: 1.1rem; font-weight: 700; }
+    .hero p { color: var(--muted); font-size: 0.75rem; }
+
+    .shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 32px 40px;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel, .report-panel {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      min-width: 0;
+    }
+
+    .panel h2, .report-head h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    /* ── Tab ── */
+    .form-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 12px;
+    }
+    .form-tabs button {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: var(--muted);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .form-tabs button.active {
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    /* ── 快速填写占位 ── */
+    .form-placeholder {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .form-placeholder .field {
+      height: 36px;
+      background: var(--bg);
+      border: 1px solid var(--sand);
+      border-radius: 8px;
+    }
+    .form-placeholder .field.tall { height: 72px; }
+    .form-placeholder .btn-main {
+      height: 40px;
+      background: var(--accent);
+      border-radius: 10px;
+      margin-top: 4px;
+    }
+    .form-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* ── 对话区 ── */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 520px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+      margin-bottom: 12px;
+    }
+    .chat-bubble {
+      padding: 10px 13px;
+      border-radius: 14px;
+      font-size: 0.84rem;
+      max-width: 92%;
+      line-height: 1.5;
+    }
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: var(--accent-soft);
+      color: var(--ink);
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.assistant {
+      align-self: flex-start;
+      background: var(--bg);
+      border: 1px solid var(--sand);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-bubble.assistant strong { color: var(--accent); }
+
+    /* 已提取信息 chips */
+    .extracted-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .chip {
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      color: var(--blue-ink);
+      font-weight: 500;
+    }
+    .chip.missing {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px dashed #fbbf24;
+    }
+
+    /* 生成进度卡片 */
+    .progress-card {
+      align-self: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--sand);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      max-width: 95%;
+    }
+    .progress-card .title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+    }
+    .progress-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .progress-step.done { color: var(--sage); }
+    .progress-step.active { color: var(--ink); font-weight: 500; }
+    .progress-step .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--sand);
+      flex-shrink: 0;
+    }
+    .progress-step.done .dot { background: var(--sage); }
+    .progress-step.active .dot {
+      background: var(--accent);
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* 完成后的跳转卡片 */
+    .done-card {
+      align-self: flex-start;
+      background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      max-width: 95%;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    .done-card:hover { box-shadow: 0 2px 12px rgba(107,144,128,0.2); }
+    .done-card .arrow { color: var(--sage); font-weight: 600; margin-top: 6px; }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--sand);
+      padding-top: 12px;
+    }
+    .chat-input-row input {
+      flex: 1;
+      border: 1px solid var(--sand);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      background: var(--bg);
+      font-family: inherit;
+    }
+    .btn-ghost {
+      border: 1px solid var(--sand);
+      background: var(--surface);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── 右侧报告区 ── */
+    .report-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .report-actions .btn-ghost { font-size: 0.78rem; padding: 6px 10px; }
+
+    /* 空状态 */
+    .report-empty-card {
+      text-align: center;
+      padding: 48px 24px;
+      border: 1px dashed var(--sand);
+      border-radius: 14px;
+      background: var(--bg);
+    }
+    .report-empty-icon { font-size: 2.2rem; margin-bottom: 12px; }
+    .report-empty-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+    .report-empty-desc {
+      font-size: 0.84rem;
+      color: var(--muted);
+      max-width: 380px;
+      margin: 0 auto 20px;
+      line-height: 1.6;
+    }
+    .report-empty-steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 280px;
+      margin: 0 auto;
+      text-align: left;
+    }
+    .report-empty-steps li {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--surface);
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .report-empty-steps li span {
+      background: var(--sand);
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* 收集中状态 */
+    .collecting-card {
+      padding: 32px 24px;
+      border: 1px dashed #93c5fd;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+      text-align: center;
+    }
+    .collecting-card .icon { font-size: 2rem; margin-bottom: 10px; }
+    .collecting-card h3 { font-size: 0.95rem; margin-bottom: 6px; }
+    .collecting-card p { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
+    .collecting-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    /* 生成中状态 */
+    .generating-card {
+      padding: 40px 24px;
+      text-align: center;
+      border-radius: 14px;
+      background: var(--bg);
+      border: 1px solid var(--sand);
+    }
+    .generating-card .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--sand);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .generating-card p { font-size: 0.84rem; color: var(--muted); }
+    .generating-card .sub { font-size: 0.75rem; margin-top: 4px; }
+
+    /* 完整报告 */
+    .report-ready { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .report-ready.highlight {
+      outline: 2px solid var(--sage);
+      outline-offset: 4px;
+      border-radius: var(--radius);
+      transition: outline 0.3s;
+    }
+
+    .itinerary-result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .itinerary-result-head .title { font-weight: 600; font-size: 0.88rem; }
+    .badge {
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      color: var(--blue-ink);
+      font-weight: 500;
+    }
+
+    .day-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    .day-tab {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--sand);
+      background: var(--bg);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .day-tab.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .magazine-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      border: 1px solid var(--sand);
+      border-radius: 14px;
+      padding: 16px;
+      background: var(--bg);
+    }
+    .outfit-img {
+      aspect-ratio: 3/4;
+      background: linear-gradient(160deg, #e7e0d5 0%, #d6cfc4 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: var(--muted);
+    }
+    .outfit-info h4 { font-size: 0.9rem; margin-bottom: 6px; }
+    .outfit-info .weather {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .outfit-info .reason {
+      font-size: 0.8rem;
+      line-height: 1.55;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+    .spot-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .spot-tag {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      background: var(--surface);
+      border: 1px solid var(--sand);
+      border-radius: 6px;
+    }
+    .shop-row {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--sand);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .shop-item {
+      flex: 1;
+      min-width: 100px;
+      background: var(--surface);
+      border: 1px solid var(--sand);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.72rem;
+    }
+    .shop-item .price { color: var(--accent); font-weight: 700; margin-top: 4px; }
+
+    /* 文字版报告（自由对话专用） */
+    .report-mode-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      padding: 3px;
+      border-radius: 10px;
+      margin-left: auto;
+    }
+    .report-mode-tabs button {
+      border: none;
+      background: transparent;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+      cursor: pointer;
+      color: var(--muted);
+      font-family: inherit;
+    }
+    .report-mode-tabs button.active {
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .text-report {
+      font-size: 0.84rem;
+      line-height: 1.65;
+    }
+    .text-report .trip-meta {
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .text-report .trip-meta strong { color: var(--ink); }
+    .text-day {
+      margin-bottom: 18px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--sand);
+    }
+    .text-day:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .text-day h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .text-day .day-weather {
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .text-day .spots {
+      font-size: 0.78rem;
+      color: var(--sage);
+      margin-bottom: 8px;
+    }
+    .text-day .outfit-text {
+      margin-bottom: 8px;
+    }
+    .text-day .shop-list {
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding-left: 0;
+      list-style: none;
+    }
+    .text-day .shop-list li {
+      padding: 4px 0;
+    }
+    .text-day .shop-list a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .text-day .shop-list a:hover { text-decoration: underline; }
+    .expand-rich-btn {
+      display: block;
+      width: 100%;
+      margin-top: 16px;
+      padding: 10px;
+      border: 1px dashed var(--sage);
+      border-radius: 10px;
+      background: #f0fdf4;
+      color: var(--sage);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+    }
+    .expand-rich-btn:hover { background: #dcfce7; }
+
+    /* 设计说明 */
+    .design-notes {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 32px 48px;
+    }
+    .design-notes details {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 20px;
+    }
+    .design-notes summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .design-notes .content {
+      margin-top: 12px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .design-notes .content strong { color: var(--ink); }
+    .design-notes table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.8rem;
+    }
+    .design-notes th, .design-notes td {
+      border: 1px solid var(--sand);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .design-notes th { background: var(--bg); font-weight: 600; color: var(--ink); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ 原型状态切换器 ═══ -->
+<div class="proto-bar">
+  <strong>原型演示</strong>
+  <span>切换右侧报告状态：</span>
+  <div class="proto-states">
+    <button class="active" data-state="empty">① 初始空状态</button>
+    <button data-state="collecting">② 对话收集中</button>
+    <button data-state="generating">③ 正在生成</button>
+    <button data-state="ready">④ 报告已生成</button>
+  </div>
+  <span class="proto-hint">自由对话 → 右侧文字版；快速填写 → 右侧图文版。点 ④ 看最终效果差异。</span>
+</div>
+
+<!-- ═══ 页面主体 ═══ -->
+<header class="hero">
+  <div class="hero-inner">
+    <h1>旅行穿搭规划助手</h1>
+    <p>AI 旅游穿搭与淘宝导购 · 按景点定制出片造型</p>
+  </div>
+</header>
+
+<main class="shell">
+
+  <!-- ── 左侧：行程输入 ── -->
+  <aside class="panel">
+    <h2>行程输入</h2>
+    <div class="form-tabs">
+      <button id="tab-form" type="button">📋 快速填写</button>
+      <button id="tab-chat" type="button" class="active">💬 自由对话</button>
+    </div>
+
+    <!-- 快速填写（占位，非本原型重点） -->
+    <div id="view-form" class="hidden">
+      <div class="form-placeholder">
+        <div class="field"></div>
+        <div class="field"></div>
+        <div class="field tall"></div>
+        <div class="field"></div>
+        <div class="btn-main"></div>
+      </div>
+      <p class="form-note">快速填写模式：填完点「开始规划穿搭」→ 右侧直接出完整报告</p>
+    </div>
+
+    <!-- 自由对话 -->
+    <div id="view-chat" class="chat-panel">
+      <div class="chat-messages" id="chat-messages">
+
+        <!-- 状态 ① 空：只有提示 -->
+        <p id="chat-hint" style="color:var(--muted);font-size:0.85rem;">
+          也可直接描述行程，例如：7月10-12日去大理，休闲风…
+        </p>
+
+        <!-- 状态 ②③④ 的对话内容（按状态显示/隐藏） -->
+        <div id="chat-flow" class="hidden">
+          <div class="chat-bubble user">
+            7月10-12日去大理，想休闲风，想去洱海和古城拍照
+          </div>
+          <div class="chat-bubble assistant" id="msg-ask">
+            收到！还差 <strong>2 项</strong> 信息：<br>
+            · 大概预算是多少？<br>
+            · 有特别想避开的单品吗？
+            <div class="extracted-chips">
+              <span class="chip">📍 大理</span>
+              <span class="chip">📅 7/10 – 7/12</span>
+              <span class="chip">🎨 休闲风</span>
+              <span class="chip">洱海 · 古城</span>
+              <span class="chip missing">预算 ？</span>
+              <span class="chip missing">避雷 ？</span>
+            </div>
+          </div>
+          <div class="chat-bubble user" id="msg-reply">
+            预算500以内，不要高跟鞋
+          </div>
+          <div class="chat-bubble assistant" id="msg-ok">
+            信息齐全了！正在为你规划 3 日穿搭方案…
+          </div>
+
+          <!-- 生成进度（状态③） -->
+          <div class="progress-card hidden" id="chat-progress">
+            <div class="title">⏳ 正在生成行程报告</div>
+            <div class="progress-steps">
+              <div class="progress-step done"><span class="dot"></span>解析行程信息</div>
+              <div class="progress-step done"><span class="dot"></span>查询天气数据</div>
+              <div class="progress-step active"><span class="dot"></span>搭配每日穿搭</div>
+              <div class="progress-step"><span class="dot"></span>生成 AI 穿搭图</div>
+              <div class="progress-step"><span class="dot"></span>推荐小红书参考</div>
+            </div>
+          </div>
+
+          <!-- 完成跳转（状态④） -->
+          <div class="done-card hidden" id="chat-done">
+            ✅ 3 日穿搭文字报告已生成！<br>
+            右侧已同步更新，可继续对话追问修改。
+            <div class="arrow">查看右侧报告 →（点击高亮）</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input type="text" placeholder="描述你的行程…" id="chat-input" />
+        <button class="btn-ghost" type="button">发送</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── 右侧：行程报告 ── -->
+  <section class="report-panel" id="report-panel">
+
+    <div class="report-head">
+      <h2 id="report-title">行程报告</h2>
+      <div class="report-mode-tabs hidden" id="report-mode-tabs">
+        <button type="button" class="active" data-mode="text">文字版</button>
+        <button type="button" data-mode="rich">图文版</button>
+      </div>
+      <div class="report-actions hidden" id="report-actions">
+        <button class="btn-ghost" type="button">重新规划</button>
+      </div>
+    </div>
+
+    <!-- ① 初始空状态 -->
+    <div id="report-empty">
+      <div class="report-empty-card">
+        <div class="report-empty-icon">🗺️</div>
+        <h3 class="report-empty-title">尚未生成行程报告</h3>
+        <p class="report-empty-desc" id="empty-desc">
+          在左侧<strong>自由对话</strong>中描述你的行程，AI 会追问补充信息。
+          信息齐全后，右侧将生成<strong>文字版</strong>行程穿搭报告。
+        </p>
+        <ul class="report-empty-steps" id="empty-steps">
+          <li><span>1</span>用自然语言描述行程</li>
+          <li><span>2</span>回答 AI 的追问（预算、风格等）</li>
+          <li><span>3</span>右侧同步文字版报告</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ② 对话收集中 -->
+    <div id="report-collecting" class="hidden">
+      <div class="collecting-card">
+        <div class="icon">💬</div>
+        <h3>对话收集中…</h3>
+        <p>AI 正在通过对话收集行程信息，补齐后将自动生成报告</p>
+        <div class="collecting-chips">
+          <span class="chip">📍 大理</span>
+          <span class="chip">📅 7/10 – 7/12</span>
+          <span class="chip">🎨 休闲风</span>
+          <span class="chip">洱海 · 古城</span>
+          <span class="chip missing">预算 ？</span>
+          <span class="chip missing">避雷 ？</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 正在生成 -->
+    <div id="report-generating" class="hidden">
+      <div class="generating-card">
+        <div class="spinner"></div>
+        <p>正在规划行程穿搭…</p>
+        <p class="sub">天气 / 穿搭 / 生图 / 商品匹配可能需要 1–3 分钟</p>
+      </div>
+    </div>
+
+    <!-- ④-A 文字版报告（自由对话默认） -->
+    <div id="report-ready-text" class="hidden report-ready">
+      <div class="itinerary-result-head">
+        <span class="title">文字行程报告</span>
+        <span class="badge">AI 推荐</span>
+      </div>
+
+      <div class="text-report">
+        <div class="trip-meta">
+          <strong>大理 · 3 日休闲游</strong><br>
+          7月10日 – 7月12日 · 预算 ¥500 以内 · 风格：休闲 · 避雷：高跟鞋
+        </div>
+
+        <div class="text-day">
+          <h4>Day 1 · 7/10 周四</h4>
+          <div class="day-weather">☀️ 晴 18–28°C · 降水 10%</div>
+          <div class="spots">📍 上午 洱海廊道 → 下午 大理古城</div>
+          <p class="outfit-text">
+            <strong>穿搭：</strong>浅色系棉麻连衣裙 + 草编遮阳帽 + 平底凉鞋。
+            洱海白天阳光强，浅色系出片且透气；凉鞋方便骑行。傍晚逛古城可加薄针织开衫。
+          </p>
+          <ul class="shop-list">
+            <li>📕 洱海出片 · 棉麻连衣裙 · <a href="#">参考小红书</a></li>
+            <li>📕 大理防晒穿搭 · 草编遮阳帽 · <a href="#">参考小红书</a></li>
+            <li>📕 古城暴走舒适鞋 · 平底凉鞋 · <a href="#">参考小红书</a></li>
+          </ul>
+        </div>
+
+        <div class="text-day">
+          <h4>Day 2 · 7/11 周五</h4>
+          <div class="day-weather">⛅ 多云 17–26°C · 降水 20%</div>
+          <div class="spots">📍 上午 崇圣寺三塔 → 下午 洱海生态廊道</div>
+          <p class="outfit-text">
+            <strong>穿搭：</strong>白色宽松衬衫 + 米色阔腿裤 + 小白鞋。
+            寺庙参观宜端庄素雅；下午廊道骑行选舒适裤装。
+          </p>
+          <ul class="shop-list">
+            <li>📕 寺庙素雅穿搭 · 宽松棉衬衫 · <a href="#">参考小红书</a></li>
+            <li>📕 小个子阔腿裤 · 米色阔腿裤 · <a href="#">参考小红书</a></li>
+          </ul>
+        </div>
+
+        <div class="text-day">
+          <h4>Day 3 · 7/12 周六</h4>
+          <div class="day-weather">🌧️ 小雨 16–22°C · 降水 65%</div>
+          <div class="spots">📍 全天 大理古城（逛街 + 返程）</div>
+          <p class="outfit-text">
+            <strong>穿搭：</strong>薄风衣 + 条纹 T 恤 + 牛仔裤 + 防水运动鞋。
+            雨天备防风外套，运动鞋防滑好走。
+          </p>
+          <ul class="shop-list">
+            <li>📕 雨天旅行穿搭 · 薄款风衣 · <a href="#">参考小红书</a></li>
+            <li>📕 防滑运动鞋推荐 · 防水运动鞋 · <a href="#">参考小红书</a></li>
+          </ul>
+        </div>
+
+        <button type="button" class="expand-rich-btn" id="expand-rich">
+          🖼️ 展开图文版（含 AI 穿搭效果图）
+        </button>
+      </div>
+    </div>
+
+    <!-- ④-B 图文版报告（快速填写默认 / 文字版可展开） -->
+    <div id="report-ready-rich" class="hidden report-ready">
+      <div class="itinerary-result-head">
+        <span class="title">行程分配</span>
+        <span class="badge">AI 推荐</span>
+      </div>
+
+      <div class="day-tabs">
+        <button class="day-tab active" type="button">7/10 周四</button>
+        <button class="day-tab" type="button">7/11 周五</button>
+        <button class="day-tab" type="button">7/12 周六</button>
+      </div>
+
+      <div class="magazine-card">
+        <div class="outfit-img">👗</div>
+        <div class="outfit-info">
+          <h4>Day 1 · 洱海廊道</h4>
+          <div class="weather">☀️ 晴 18–28°C · 降水 10%</div>
+          <p class="reason">
+            洱海白天阳光充足，推荐浅色系棉麻连衣裙搭配草编帽，
+            轻便凉鞋方便骑行拍照。傍晚古城逛街可加薄针织开衫。
+          </p>
+          <div class="spot-tags">
+            <span class="spot-tag">上午 · 洱海廊道</span>
+            <span class="spot-tag">下午 · 大理古城</span>
+          </div>
+          <div class="shop-row">
+            <div class="shop-item">棉麻连衣裙<div class="price">¥128</div></div>
+            <div class="shop-item">草编遮阳帽<div class="price">¥45</div></div>
+            <div class="shop-item">平底凉鞋<div class="price">¥89</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ═══ 设计说明 ═══ -->
+<div class="design-notes">
+  <details open>
+    <summary>📐 这个原型的设计逻辑（点开/收起）</summary>
+    <div class="content">
+      <p>核心原则：<strong>左侧对话负责聊天，右侧报告负责展示结果</strong>。两种输入方式的右侧报告<strong>形态不同</strong>：</p>
+      <table>
+        <tr>
+          <th>输入方式</th>
+          <th>右侧报告形态</th>
+          <th>理由</th>
+        </tr>
+        <tr>
+          <td>💬 自由对话</td>
+          <td><strong>文字版</strong>（按日分段、纯文字穿搭 + 小红书参考链接）</td>
+          <td>和对话节奏一致，轻量好读，可边聊边看；需要看图时点「展开图文版」</td>
+        </tr>
+        <tr>
+          <td>📋 快速填写</td>
+          <td><strong>图文版</strong>（杂志卡片、AI 效果图、商品卡片）</td>
+          <td>用户已填完结构化表单，预期直接拿「成品画册」</td>
+        </tr>
+      </table>
+      <table style="margin-top:12px">
+        <tr>
+          <th>阶段</th>
+          <th>左侧（自由对话）</th>
+          <th>右侧（文字版报告）</th>
+        </tr>
+        <tr>
+          <td>① 初始</td>
+          <td>空对话 + 输入提示</td>
+          <td>空状态引导</td>
+        </tr>
+        <tr>
+          <td>② 收集中</td>
+          <td>多轮气泡 + chips + 追问</td>
+          <td>「对话收集中」+ chips 摘要</td>
+        </tr>
+        <tr>
+          <td>③ 生成中</td>
+          <td>进度步骤条</td>
+          <td>loading</td>
+        </tr>
+        <tr>
+          <td>④ 完成</td>
+          <td>完成提示，可继续对话修改</td>
+          <td><strong>文字版报告</strong>（可展开图文版）</td>
+        </tr>
+      </table>
+      <p style="margin-top:12px">
+        <strong>文字版的好处：</strong>不抢对话的视觉重心；3 天内容一屏能扫完；用户还可以说「第二天换一双鞋」继续改。
+        <strong>保留图文版入口：</strong>AI 穿搭效果图仍是核心卖点，文字版底部提供「展开图文版」即可。
+      </p>
+    </div>
+  </details>
+</div>
+
+<script>
+  const states = ["empty", "collecting", "generating", "ready"];
+  let currentState = "empty";
+  let inputTab = "chat";       // "chat" | "form"
+  let reportView = "text";     // "text" | "rich"
+
+  const els = {
+    empty: document.getElementById("report-empty"),
+    collecting: document.getElementById("report-collecting"),
+    generating: document.getElementById("report-generating"),
+    readyText: document.getElementById("report-ready-text"),
+    readyRich: document.getElementById("report-ready-rich"),
+    chatHint: document.getElementById("chat-hint"),
+    chatFlow: document.getElementById("chat-flow"),
+    chatProgress: document.getElementById("chat-progress"),
+    chatDone: document.getElementById("chat-done"),
+    msgAsk: document.getElementById("msg-ask"),
+    msgReply: document.getElementById("msg-reply"),
+    msgOk: document.getElementById("msg-ok"),
+    reportActions: document.getElementById("report-actions"),
+    reportModeTabs: document.getElementById("report-mode-tabs"),
+    reportPanel: document.getElementById("report-panel"),
+    chatInput: document.getElementById("chat-input"),
+    reportTitle: document.getElementById("report-title"),
+  };
+
+  function defaultReportView() {
+    return inputTab === "chat" ? "text" : "rich";
+  }
+
+  function showReadyReport() {
+    const view = reportView;
+    els.readyText.classList.toggle("hidden", view !== "text");
+    els.readyRich.classList.toggle("hidden", view !== "rich");
+    els.reportModeTabs.classList.remove("hidden");
+    document.querySelectorAll(".report-mode-tabs button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.mode === view);
+    });
+    els.reportTitle.textContent = view === "text" ? "行程报告" : "行程报告";
+  }
+
+  function setState(state) {
+    currentState = state;
+    els.empty.classList.toggle("hidden", state !== "empty");
+    els.collecting.classList.toggle("hidden", state !== "collecting");
+    els.generating.classList.toggle("hidden", state !== "generating");
+    els.readyText.classList.add("hidden");
+    els.readyRich.classList.add("hidden");
+    els.reportModeTabs.classList.add("hidden");
+
+    if (state === "ready") {
+      reportView = defaultReportView();
+      showReadyReport();
+    }
+
+    document.querySelectorAll(".proto-states button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.state === state);
+    });
+
+    if (state === "empty") {
+      els.chatHint.classList.remove("hidden");
+      els.chatFlow.classList.add("hidden");
+      els.reportActions.classList.add("hidden");
+      els.chatInput.disabled = false;
+    } else {
+      els.chatHint.classList.add("hidden");
+      els.chatFlow.classList.remove("hidden");
+      els.chatInput.disabled = state === "generating";
+
+      els.msgAsk.classList.toggle("hidden", false);
+      els.msgReply.classList.toggle("hidden", state === "collecting");
+      els.msgOk.classList.toggle("hidden", state === "collecting");
+      els.chatProgress.classList.toggle("hidden", state !== "generating");
+      els.chatDone.classList.toggle("hidden", state !== "ready");
+      els.reportActions.classList.toggle("hidden", state !== "ready");
+    }
+
+    els.reportPanel.classList.remove("highlight");
+  }
+
+  document.querySelectorAll(".proto-states button").forEach(btn => {
+    btn.addEventListener("click", () => setState(btn.dataset.state));
+  });
+
+  // 完成卡片 → 高亮右侧
+  els.chatDone.addEventListener("click", () => {
+    els.reportPanel.classList.add("highlight");
+    els.reportPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    setTimeout(() => els.reportPanel.classList.remove("highlight"), 2000);
+  });
+
+  // 报告视图切换（文字版 ↔ 图文版）
+  document.querySelectorAll(".report-mode-tabs button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      reportView = btn.dataset.mode;
+      showReadyReport();
+    });
+  });
+  document.getElementById("expand-rich").addEventListener("click", () => {
+    reportView = "rich";
+    showReadyReport();
+    els.reportPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  function switchInputTab(tab) {
+    inputTab = tab;
+    const isChat = tab === "chat";
+    document.getElementById("tab-form").classList.toggle("active", !isChat);
+    document.getElementById("tab-chat").classList.toggle("active", isChat);
+    document.getElementById("view-form").classList.toggle("hidden", isChat);
+    document.getElementById("view-chat").classList.toggle("hidden", !isChat);
+
+    if (isChat) {
+      document.getElementById("empty-desc").innerHTML =
+        '在左侧<strong>自由对话</strong>中描述行程，AI 追问补齐后，右侧生成<strong>文字版</strong>报告。';
+      document.getElementById("empty-steps").innerHTML = `
+        <li><span>1</span>用自然语言描述行程</li>
+        <li><span>2</span>回答 AI 的追问</li>
+        <li><span>3</span>右侧同步文字版报告</li>`;
+    } else {
+      document.getElementById("empty-desc").innerHTML =
+        '填写表单后点击 <strong>「开始规划穿搭」</strong>，右侧直接生成<strong>图文版</strong>报告（含 AI 效果图）。';
+      document.getElementById("empty-steps").innerHTML = `
+        <li><span>1</span>选择目的地与景点</li>
+        <li><span>2</span>设置风格与预算</li>
+        <li><span>3</span>一键生成图文报告</li>`;
+    }
+
+    if (currentState === "ready") {
+      reportView = defaultReportView();
+      showReadyReport();
+    }
+  }
+
+  document.getElementById("tab-form").addEventListener("click", () => switchInputTab("form"));
+  document.getElementById("tab-chat").addEventListener("click", () => switchInputTab("chat"));
+
+  setState("empty");
+</script>
+</body>
+</html>

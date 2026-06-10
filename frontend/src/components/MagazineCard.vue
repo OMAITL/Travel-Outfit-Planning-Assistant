@@ -88,9 +88,6 @@ const tab = ref<"summary" | "look" | "products">("summary");
             </div>
           </a>
         </div>
-        <p style="margin-top: 12px">
-          <router-link to="/tryon">✨ 进入 AI 试衣间组合试穿 →</router-link>
-        </p>
       </div>
     </div>
   </article>

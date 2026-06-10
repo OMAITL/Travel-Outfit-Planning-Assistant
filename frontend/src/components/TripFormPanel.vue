@@ -8,6 +8,7 @@ import StyleMultiselect from "@/components/StyleMultiselect.vue";
 import { usePlanningStore } from "@/stores/planning";
 import { USE_API } from "@/config";
 import { toIsoDate, addDays } from "@/utils/format";
+import type { FormDraftSnapshot } from "@/utils/sessionHistory";
 
 const store = usePlanningStore();
 
@@ -64,6 +65,42 @@ function onCityChange(key: string) {
   store.setCityKey(key);
 }
 
+function buildFormDraft(): FormDraftSnapshot {
+  return {
+    startDate: startDate.value,
+    endDate: endDate.value,
+    styleTags: [...styleTags.value],
+    avoidItems: [...avoidItems.value],
+    categoryBudgets: { ...categoryBudgets.value },
+    gender: gender.value,
+    heightCm: heightCm.value,
+    weightKg: weightKg.value,
+    bodyType: bodyType.value,
+    skinTone: skinTone.value,
+  };
+}
+
+function applyFormDraft(draft: FormDraftSnapshot) {
+  startDate.value = draft.startDate;
+  endDate.value = draft.endDate;
+  styleTags.value = [...draft.styleTags];
+  avoidItems.value = [...draft.avoidItems];
+  categoryBudgets.value = { ...draft.categoryBudgets };
+  gender.value = draft.gender;
+  heightCm.value = draft.heightCm;
+  weightKg.value = draft.weightKg;
+  bodyType.value = draft.bodyType;
+  skinTone.value = draft.skinTone;
+}
+
+watch(
+  () => store.formDraftRestoreTick,
+  () => {
+    const draft = store.lastFormDraft;
+    if (draft) applyFormDraft(draft);
+  },
+);
+
 function onSubmit() {
   const city = store.currentCity;
   if (!city) return;
@@ -82,6 +119,7 @@ function onSubmit() {
   store.error = null;
   if (store.planMode === "auto") store.autoAssignDays();
   const budgets = resolveBudgets();
+  store.setFormDraft(buildFormDraft());
   const dailySpotNames = store.days.map((day) =>
     day.spotIds
       .map((id) => store.getSpotById(id)?.name)

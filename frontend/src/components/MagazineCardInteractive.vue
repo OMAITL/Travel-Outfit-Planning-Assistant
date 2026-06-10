@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
 import type { DailyReportCard, ProductCard, ProductItemGroup } from "@/api/types";
 import { DEMO_PRODUCTS, type ProductCategory } from "@/data/demoReport";
 import { usePlanningStore } from "@/stores/planning";
@@ -22,7 +21,6 @@ const props = defineProps<{
 }>();
 
 const store = usePlanningStore();
-const router = useRouter();
 const tab = ref<"summary" | "products">("summary");
 const sceneId = ref("");
 const productCat = ref<string>("");
@@ -508,10 +506,6 @@ watch(
   },
   { immediate: true },
 );
-
-function goTryon() {
-  router.push("/tryon");
-}
 </script>
 
 <template>
@@ -619,7 +613,6 @@ function goTryon() {
     <div class="tab-panel" :class="{ active: tab === 'products' }">
       <div class="products-head">
         <h4>🛍 推荐商品 — 与穿搭一一对应</h4>
-        <button type="button" class="link-tryon" @click="goTryon">✨ AI 试衣</button>
       </div>
       <div class="cat-tabs">
         <button

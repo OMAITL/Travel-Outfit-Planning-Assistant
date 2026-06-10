@@ -1,275 +1,176 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import MagazineCardInteractive from "./MagazineCardInteractive.vue";
-import { USE_API } from "@/config";
+import { computed } from "vue";
+import RichReportBody from "./RichReportBody.vue";
+import TextReportView from "./TextReportView.vue";
 import { usePlanningStore } from "@/stores/planning";
 
 const store = usePlanningStore();
-const debugOpen = ref(false);
-const xhsDebugOpen = ref(false);
 
-const report = computed(() => store.state?.report ?? null);
-const cards = computed(() => report.value?.daily_cards ?? []);
-const selectedCard = computed(() => cards.value[store.selectedDayIndex] ?? null);
-const showDemo = computed(() => store.demoReportActive && !report.value?.daily_cards?.length);
-const showLiveReport = computed(() => (report.value?.daily_cards?.length ?? 0) > 0);
-
-const shoppingTrace = computed(() =>
-  (store.state?.trace ?? []).filter((t) => t.agent === "Shopping"),
+const showChatReportActions = computed(
+  () => store.inputTab === "chat" && store.hasLiveReport,
 );
 
-const taobaoKeywords = computed(() => {
-  const rows: { keyword: string; detail: string; level: string }[] = [];
-  for (const event of shoppingTrace.value) {
-    const msg = event.message;
-    if (msg.startsWith("Taobao API:")) continue;
-    const hitMatch = msg.match(/via「(.+?)」/);
-    const missMatch = msg.match(/0 hits for「(.+?)」/);
-    const keyword = hitMatch?.[1] ?? missMatch?.[1];
-    if (!keyword) continue;
-    if (rows.some((r) => r.detail === msg)) continue;
-    rows.push({ keyword, detail: msg, level: event.level ?? "info" });
+const collectingHints = computed(() => {
+  const intent = store.state?.chat_intent;
+  const hints: { text: string; missing?: boolean }[] = [];
+
+  if (intent?.destination) hints.push({ text: `📍 ${intent.destination}` });
+  if (intent?.start_date && intent?.end_date) {
+    hints.push({ text: `📅 ${intent.start_date} – ${intent.end_date}` });
   }
-  return rows;
+  if (intent?.scene_type) hints.push({ text: `🎯 ${intent.scene_type}` });
+  if (intent?.style_tendency) hints.push({ text: `🎨 ${intent.style_tendency}` });
+  if (intent?.gender) hints.push({ text: `👤 ${intent.gender}` });
+  if (intent?.spot_names?.length) hints.push({ text: `📍 ${intent.spot_names.join("、")}` });
+  if (intent?.budget_per_item) hints.push({ text: `💰 单品约 ¥${intent.budget_per_item}` });
+  if (intent?.body_type) hints.push({ text: `🧍 ${intent.body_type}` });
+  if (intent?.height_cm && intent?.weight_kg) {
+    hints.push({ text: `📏 ${intent.height_cm}cm / ${intent.weight_kg}kg` });
+  }
+  if (intent?.skin_tone) hints.push({ text: `🎨 肤色 ${intent.skin_tone}` });
+  if (intent?.avoid_items?.length) hints.push({ text: `🚫 ${intent.avoid_items.join("、")}` });
+  if (intent?.climate_hint) hints.push({ text: `🌤 ${intent.climate_hint}` });
+
+  const fieldLabels: Record<string, string> = {
+    scene_type: "场景偏好",
+    destination: "目的地",
+    dates: "出行日期",
+    start_date: "出行日期",
+    end_date: "返程日期",
+    gender: "性别",
+    spot_names: "景点",
+    budget: "预算",
+    body_type: "体型",
+    height_weight: "身高体重",
+    skin_tone: "肤色",
+    avoid_items: "穿搭避雷",
+  };
+
+  for (const field of intent?.missing_fields ?? []) {
+    hints.push({ text: `${fieldLabels[field] ?? field} ？`, missing: true });
+  }
+
+  if (!hints.length) {
+    const userMsgs = (store.state?.messages ?? []).filter((m) => m.role === "user");
+    const last = userMsgs.at(-1);
+    if (last) hints.push({ text: last.content.slice(0, 40) + (last.content.length > 40 ? "…" : "") });
+  }
+  return hints;
 });
-
-const xhsQueryDebug = computed(() => store.state?.xhs_query_debug ?? []);
-
-const xhsInspirationTrace = computed(() =>
-  (store.state?.trace ?? []).filter(
-    (t) => t.agent === "Inspiration" || t.agent === "QueryCompiler",
-  ),
-);
-
-const showXhsQueryDebug = computed(
-  () => USE_API && showLiveReport.value && xhsQueryDebug.value.length > 0,
-);
-
-const badgeStyle = computed(() =>
-  showDemo.value
-    ? store.resultBadge
-    : { text: "AI 推荐", bg: "#e0f2fe", color: "#0369a1" },
-);
-
-function onDayClick(index: number, e: MouseEvent) {
-  const t = e.target as HTMLElement;
-  if (t.closest(".chip-rm") || t.closest(".day-add-spot")) return;
-  store.selectedDayIndex = index;
-}
 </script>
 
 <template>
-  <section class="report-panel">
+  <section
+    class="report-panel"
+    :class="{ 'report-panel-highlight': store.reportHighlight }"
+  >
     <div v-if="store.toast" class="toast-banner">{{ store.toast }}</div>
 
     <div class="report-head">
       <h2>行程报告</h2>
-      <div v-if="store.hasReport" class="report-actions">
-        <button
-          v-show="store.planMode === 'auto' && showDemo"
-          type="button"
-          class="btn-ghost"
-          @click="store.regenItinerary()"
+      <div class="report-head-right">
+        <div
+          v-if="(store.inputTab === 'form' && store.hasReport) || showChatReportActions"
+          class="report-actions"
         >
-          ↻ 重新智能分配
-        </button>
-        <button
-          v-show="store.planMode === 'auto' && showDemo"
-          type="button"
-          class="btn-ghost"
-          :class="{ active: store.editItinerary }"
-          @click="store.toggleEditItinerary()"
-        >
-          {{ store.editItineraryLabel }}
-        </button>
-        <button type="button" class="btn-ghost" @click="store.reset()">重新规划</button>
-      </div>
-    </div>
-
-    <div v-if="store.error && !store.hasReport" class="error-banner">{{ store.error }}</div>
-
-    <div v-if="!store.hasReport" class="report-empty">
-      <div class="report-empty-card">
-        <div class="report-empty-icon" aria-hidden="true">🗺️</div>
-        <h3 class="report-empty-title">尚未生成行程报告</h3>
-        <p class="report-empty-desc">
-          请在左侧填写目的地、出行日期、景点与风格偏好，点击
-          <strong>「开始规划穿搭」</strong>
-          后，AI 将为你生成每日行程分配、穿搭推荐与购物清单。
-        </p>
-        <ul class="report-empty-steps">
-          <li><span>1</span>选择目的地与景点</li>
-          <li><span>2</span>设置风格与预算</li>
-          <li><span>3</span>一键生成专属报告</li>
-        </ul>
-      </div>
-    </div>
-
-    <template v-else>
-      <p class="itinerary-edit-hint" :class="{ visible: store.editItinerary && showDemo }">
-        编辑模式：点击各日卡片上的 × 删除景点，或点 + 添加
-      </p>
-
-      <div v-if="store.error" class="error-banner">{{ store.error }}</div>
-
-      <p v-if="store.reportModeNote" class="report-mode-note">{{ store.reportModeNote }}</p>
-
-      <div class="itinerary-result">
-        <div class="itinerary-result-head">
-          <span class="title">行程分配</span>
-          <span
-            class="auto-badge"
-            :style="{ background: badgeStyle.bg, color: badgeStyle.color }"
+          <button
+            v-show="store.planMode === 'auto' && store.demoReportActive && !store.state?.report?.daily_cards?.length"
+            type="button"
+            class="btn-ghost"
+            @click="store.regenItinerary()"
           >
-            {{ badgeStyle.text }}
-          </span>
+            ↻ 重新智能分配
+          </button>
+          <button
+            v-show="store.planMode === 'auto' && store.demoReportActive && !store.state?.report?.daily_cards?.length"
+            type="button"
+            class="btn-ghost"
+            :class="{ active: store.editItinerary }"
+            @click="store.toggleEditItinerary()"
+          >
+            {{ store.editItineraryLabel }}
+          </button>
+          <button type="button" class="btn-ghost" @click="store.reset()">重新规划</button>
         </div>
-        <p v-if="store.days.length > 5" class="day-strip-hint">
-          ← 在下方区域内滑动查看全部 {{ store.days.length }} 天 →
-        </p>
-        <div class="day-strip-scroll">
-          <div class="weather-strip" :class="{ editing: store.editItinerary && showDemo }">
-            <div
-              v-for="(d, i) in store.days"
+      </div>
+    </div>
+
+    <!-- ═══ 快速填写：保持原有逻辑 ═══ -->
+    <template v-if="store.inputTab === 'form'">
+      <div v-if="store.error && !store.hasReport" class="error-banner">{{ store.error }}</div>
+
+      <div v-if="!store.hasReport" class="report-empty">
+        <div class="report-empty-card">
+          <div class="report-empty-icon" aria-hidden="true">🗺️</div>
+          <h3 class="report-empty-title">尚未生成行程报告</h3>
+          <p class="report-empty-desc">
+            请在左侧填写目的地、出行日期、景点与风格偏好，点击
+            <strong>「开始规划穿搭」</strong>
+            后，AI 将为你生成每日行程分配、穿搭推荐与购物清单。
+          </p>
+          <ul class="report-empty-steps">
+            <li><span>1</span>选择目的地与景点</li>
+            <li><span>2</span>设置风格与预算</li>
+            <li><span>3</span>一键生成专属报告</li>
+          </ul>
+        </div>
+      </div>
+
+      <template v-else>
+        <div v-if="store.error" class="error-banner">{{ store.error }}</div>
+        <RichReportBody />
+      </template>
+    </template>
+
+    <!-- ═══ 自由对话：仅文字报告 ═══ -->
+    <template v-else>
+      <div v-if="store.error && store.showChatEmpty" class="error-banner">{{ store.error }}</div>
+
+      <div v-if="store.showChatEmpty" class="report-empty">
+        <div class="report-empty-card">
+          <div class="report-empty-icon" aria-hidden="true">💬</div>
+          <h3 class="report-empty-title">尚未生成行程报告</h3>
+          <p class="report-empty-desc">
+            在左侧<strong>自由对话</strong>中描述你的行程，AI 会追问补充信息。
+            信息齐全后，右侧将生成行程穿搭文字报告。
+          </p>
+          <ul class="report-empty-steps">
+            <li><span>1</span>用自然语言描述行程</li>
+            <li><span>2</span>回答 AI 的追问</li>
+            <li><span>3</span>右侧同步文字报告</li>
+          </ul>
+        </div>
+      </div>
+
+      <div v-else-if="store.chatCollecting" class="report-collecting">
+        <div class="collecting-card">
+          <div class="collecting-icon" aria-hidden="true">💬</div>
+          <h3>对话收集中…</h3>
+          <p>AI 正在通过对话收集行程信息，补齐后将自动生成报告</p>
+          <div v-if="collectingHints.length" class="collecting-chips">
+            <span
+              v-for="(hint, i) in collectingHints"
               :key="i"
-              class="weather-mini"
-              :class="{ active: store.selectedDayIndex === i }"
-              @click="onDayClick(i, $event)"
-            >
-              <div class="date">{{ d.dateShort }}</div>
-              <div class="wd">{{ d.weekday }}</div>
-              <div v-if="d.temp" class="temp">{{ d.temp }}</div>
-              <div class="day-spot-row">
-                <template v-if="d.morningId || d.afternoonId || d.eveningId">
-                  <span v-if="d.morningId" class="spot-chip-sm slot-am">
-                    上午 {{ store.shortSpotLabel(store.getSpotById(d.morningId)?.name ?? d.morningId) }}
-                  </span>
-                  <span v-if="d.afternoonId" class="spot-chip-sm slot-pm">
-                    下午 {{ store.shortSpotLabel(store.getSpotById(d.afternoonId)?.name ?? d.afternoonId) }}
-                  </span>
-                  <span v-if="d.eveningId" class="spot-chip-sm slot-ev">
-                    晚间 {{ store.shortSpotLabel(store.getSpotById(d.eveningId)?.name ?? d.eveningId) }}
-                  </span>
-                </template>
-                <template v-else>
-                  <span v-for="sid in d.spotIds" :key="sid" class="spot-chip-sm">
-                    {{ store.shortSpotLabel(store.getSpotById(sid)?.name ?? sid) }}
-                    <button
-                      v-if="store.editItinerary && showDemo"
-                      type="button"
-                      class="chip-rm"
-                      @click.stop="store.removeDaySpot(i, sid)"
-                    >
-                      ×
-                    </button>
-                  </span>
-                </template>
-                <button
-                  v-if="store.editItinerary && showDemo"
-                  type="button"
-                  class="day-add-spot"
-                  @click.stop="store.addDaySpot(i)"
-                >
-                  + 添加
-                </button>
-                <span
-                  v-if="!d.spotIds.length && !d.morningId && !d.afternoonId && !d.eveningId"
-                  class="spot-chip-sm spot-chip-placeholder"
-                >
-                  待分配
-                </span>
-              </div>
-            </div>
+              class="chip"
+              :class="{ missing: hint.missing }"
+            >{{ hint.text }}</span>
           </div>
         </div>
+        <div v-if="store.error" class="error-banner">{{ store.error }}</div>
       </div>
 
-      <MagazineCardInteractive
-        v-if="showDemo"
-        :demo-day-index="store.selectedDayIndex"
-      />
-      <MagazineCardInteractive
-        v-else-if="selectedCard"
-        :card="selectedCard"
-        :demo-day-index="store.selectedDayIndex"
-        :destination="report?.destination"
-      />
+      <div v-else-if="store.chatGenerating" class="report-generating">
+        <div class="generating-card">
+          <div class="generating-spinner" aria-hidden="true" />
+          <p>正在规划行程穿搭…</p>
+          <p class="generating-sub">天气 / 小红书参考 / 穿搭分析可能需要 1–4 分钟</p>
+        </div>
+      </div>
 
-      <p v-if="!USE_API" class="footer-note demo-footer">
-        演示模式（VITE_USE_API=false）· 填写表单仅本地预览
-      </p>
-      <p v-else-if="showDemo && !store.state?.report" class="footer-note demo-footer">
-        填写左侧表单并点击「开始规划穿搭」连接后端生成报告
-      </p>
-      <p v-else-if="report?.disclaimer" class="footer-note">{{ report.disclaimer }}</p>
-
-      <details
-        v-if="showXhsQueryDebug"
-        class="shopping-debug query-debug"
-        :open="xhsDebugOpen"
-        @toggle="xhsDebugOpen = ($event.target as HTMLDetailsElement).open"
-      >
-        <summary>小红书搜索 Query Debug（{{ xhsQueryDebug.length }} 条）</summary>
-        <ul>
-          <li v-for="(row, i) in xhsQueryDebug" :key="i">
-            <strong>{{ row.trip_date }} · {{ row.spot }}</strong>
-            <span class="shopping-debug-detail">搜索词：{{ row.final_query }}</span>
-            <span class="shopping-debug-detail">
-              规则：
-              <span v-for="(tok, j) in row.base_tokens" :key="j">
-                {{ tok.rule }}「{{ tok.token }}」<span v-if="j < row.base_tokens.length - 1"> · </span>
-              </span>
-            </span>
-            <span v-if="row.expanded_queries.length" class="shopping-debug-detail">
-              LLM 扩展：{{ row.expanded_queries.join("；") }}
-            </span>
-            <span class="shopping-debug-detail">
-              雷点过滤 {{ row.filtered_avoid }} · 非穿搭 {{ row.filtered_non_outfit }} ·
-              低赞 {{ row.filtered_low_likes }} · 保留 {{ row.notes_kept }} 条
-            </span>
-          </li>
-        </ul>
-        <p class="shopping-debug-hint">
-          由 Outfit Query Compiler 生成：代码规则编译搜索词，结果按穿搭雷点规则过滤。
-          <span v-if="xhsInspirationTrace.length">
-            若「保留 0 条」，请看下方 Inspiration / QueryCompiler 日志或重新规划。
-          </span>
-        </p>
-      </details>
-
-      <details
-        v-else-if="USE_API && showLiveReport && xhsInspirationTrace.length"
-        class="shopping-debug query-debug"
-        :open="xhsDebugOpen"
-        @toggle="xhsDebugOpen = ($event.target as HTMLDetailsElement).open"
-      >
-        <summary>小红书搜索 Trace（{{ xhsInspirationTrace.length }} 条）</summary>
-        <ul>
-          <li v-for="(event, i) in xhsInspirationTrace" :key="i" :class="event.level">
-            <strong>{{ event.agent }}</strong>
-            <span class="shopping-debug-detail">{{ event.message }}</span>
-          </li>
-        </ul>
-        <p class="shopping-debug-hint">
-          未收到 xhs_query_debug 结构化数据（请重启后端后重新规划）。上方为 Inspiration / QueryCompiler 原始日志。
-        </p>
-      </details>
-
-      <details
-        v-if="USE_API && showLiveReport && taobaoKeywords.length"
-        class="shopping-debug"
-        :open="debugOpen"
-        @toggle="debugOpen = ($event.target as HTMLDetailsElement).open"
-      >
-        <summary>淘宝搜索关键词（{{ taobaoKeywords.length }} 条）</summary>
-        <ul>
-          <li v-for="(row, i) in taobaoKeywords" :key="i" :class="row.level">
-            <strong>{{ row.keyword }}</strong>
-            <span class="shopping-debug-detail">{{ row.detail }}</span>
-          </li>
-        </ul>
-        <p class="shopping-debug-hint">淘宝 API 由后端调用，浏览器 Network 里只能看到一条 <code>plan</code> 请求。</p>
-      </details>
+      <template v-else-if="store.hasLiveReport">
+        <div v-if="store.error" class="error-banner">{{ store.error }}</div>
+        <TextReportView />
+      </template>
     </template>
   </section>
 </template>

@@ -15,6 +15,7 @@ from src.graph.state import (
     WeatherCondition,
 )
 from src.graph.workflow import (
+    _route_after_stylist,
     _route_after_trip,
     compile_workflow,
     get_compiled_graph,
@@ -39,16 +40,32 @@ def test_route_after_trip_planning_continues() -> None:
     assert _route_after_trip(state) == "weather"
 
 
+def test_route_after_stylist_chat_skips_assets() -> None:
+    state = PlanningState(input_mode="chat").model_dump(mode="json")
+    assert _route_after_stylist(state) == "report"
+
+
+def test_route_after_stylist_form_uses_assets() -> None:
+    state = PlanningState(input_mode="form").model_dump(mode="json")
+    assert _route_after_stylist(state) == "assets"
+
+
 def test_run_planning_stops_when_collecting() -> None:
     extraction = TripExtraction(
+        destination="大理",
         is_complete=False,
-        follow_up_question="请告诉我具体城市和日期。",
+        follow_up_question="你这次更偏向哪种穿搭场景？",
+        follow_up_field="scene_type",
+        follow_up_options=["出片拍照", "舒适休闲", "混合风格"],
     )
     with patch("src.graph.nodes.trip.invoke_structured", return_value=extraction):
-        result = run_planning("下周去云南")
+        result = run_planning("去大理怎么玩")
 
     assert result.phase == PlanningPhase.COLLECTING
     assert result.messages[-1].role == "assistant"
+    assert "什么时候" in result.messages[-1].content or "出发" in result.messages[-1].content
+    assert result.chat_intent is not None
+    assert result.chat_intent.get("destination") == "大理"
     assert result.report is None
 
 
@@ -61,6 +78,7 @@ def test_full_workflow_with_mocked_nodes() -> None:
         destination=trip.destination,
         start_date=trip.start_date,
         end_date=trip.end_date,
+        scene_type="度假",
         is_complete=True,
     )
     forecast = [
@@ -109,6 +127,62 @@ def test_full_workflow_with_mocked_nodes() -> None:
     assert isinstance(result.report, TravelReport)
     assert len(result.report.daily_cards) >= 1
     assert any(event.agent == "Assets" for event in result.trace)
+
+
+def test_chat_mode_skips_assets() -> None:
+    fixture = _load_fixture_state()
+    trip = fixture.trip
+    assert trip is not None
+
+    extraction = TripExtraction(
+        destination=trip.destination,
+        start_date=trip.start_date,
+        end_date=trip.end_date,
+        scene_type="度假",
+        is_complete=True,
+    )
+    forecast = [
+        DailyWeather(
+            date=date(2026, 7, 10),
+            temp_min=18,
+            temp_max=26,
+            condition=WeatherCondition.SUNNY,
+        )
+    ]
+    outfits = [
+        DailyOutfit(
+            date=date(2026, 7, 10),
+            outfit_summary="防晒衬衫 + 阔腿裤",
+            search_keywords=["女 防晒 衬衫"],
+        )
+    ]
+    initial = PlanningState(input_mode="chat", phase=PlanningPhase.PLANNING, trip=trip)
+
+    import src.graph.workflow as wf
+
+    def _noop_node(state: PlanningState) -> PlanningState:
+        return state
+
+    wf._COMPILED_GRAPH = None
+    with (
+        patch("src.graph.nodes.trip.invoke_structured", return_value=extraction),
+        patch("src.graph.nodes.weather.fetch_daily_weather", return_value=forecast),
+        patch(
+            "src.graph.nodes.stylist.invoke_structured", return_value=StylistOutput(outfits=outfits)
+        ),
+        patch("src.graph.workflow.inspiration_node", _noop_node),
+        patch("src.graph.workflow.vision_node", _noop_node),
+        patch("src.graph.nodes.image.generate_outfit_look") as mock_image,
+        patch("src.graph.nodes.shopping.search_products") as mock_shop,
+    ):
+        result = run_planning("7月10日到12日去大理", state=initial)
+    wf._COMPILED_GRAPH = None
+
+    assert result.phase == PlanningPhase.DONE
+    assert result.report is not None
+    assert not any(event.agent == "Assets" for event in result.trace)
+    mock_image.assert_not_called()
+    mock_shop.assert_not_called()
 
 
 def test_compile_workflow_is_cached() -> None:

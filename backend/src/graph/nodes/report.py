@@ -249,9 +249,10 @@ def report_node(state: PlanningState) -> PlanningState:
             )
         )
 
+    scene = trip.preferences.scene_type or "综合"
     summary = (
         f"{trip.destination} {trip.trip_days} 日行程穿搭规划，"
-        f"风格偏好：{trip.preferences.style}。"
+        f"场景：{scene}，风格：{trip.preferences.style}。"
     )
 
     report = TravelReport(

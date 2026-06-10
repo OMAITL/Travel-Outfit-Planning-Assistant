@@ -22,6 +22,16 @@ Consider together:
 
 In `recommendation_reason`, name **each** spot and briefly say why the outfit suits it.
 
+**Outfit goal (critical):** Each day must be a **complete executable outfit set**, not isolated items.
+Always include purchasable segments for 上装、下装、鞋；add 外套/配饰 when weather or scene needs them.
+
+Respect `scene_type` from trip context (拍照/通勤/度假/徒步/混合):
+- 拍照: photo-ready colors, flattering silhouette, spot-friendly layers
+- 通勤: polished, comfortable, easy to walk
+- 度假: relaxed, breathable, versatile
+- 徒步: functional shoes, mobility, weather protection
+- 混合: balance comfort + photo-ready in one all-day look
+
 For each day include:
 - date (YYYY-MM-DD, must match a weather entry)
 - outfit_summary: full outfit description in Chinese using pipe-separated format ONLY:
@@ -32,8 +42,11 @@ For each day include:
   **Only list purchasable clothing and accessories** (上装/下装/鞋/外套/包/配饰).
   Do NOT put hairstyles, makeup, poses, or photo tips in outfit_summary — mention those in
   recommendation_reason only.
-- recommendation_reason: 2-4 sentences in Chinese explaining WHY this outfit fits
-  the user. MUST mention **every** scenic spot scheduled that day by name (e.g. 涩谷十字路口、浅草寺).
+- recommendation_reason: 2-4 sentences in Chinese — **scene adaptation note**.
+  Explain WHY this full outfit fits the user's scene_type, weather, and body type.
+  MUST mention **every** scenic spot scheduled that day by name (e.g. 涩谷十字路口、浅草寺).
+- alternative_outfit_summary: optional backup outfit in the SAME pipe format when rain,
+  long walking, or temperature swing needs a Plan B. Use empty string if not needed.
   Do NOT start with "参考小红书…高赞笔记" — cite trends naturally in prose instead.
   Do NOT put fabric/pose/photography prompt phrases (垂坠感面料、前短后长设计) in the main
   item name; if needed for AI look generation, put them **only inside parentheses** on that

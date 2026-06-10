@@ -15,6 +15,28 @@ export interface City {
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
+  options?: string[];
+}
+
+export interface ChatIntentDraft {
+  destination?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  scene_type?: string | null;
+  style_tendency?: string;
+  climate_hint?: string;
+  gender?: string | null;
+  spot_names?: string[];
+  budget_per_item?: number | null;
+  budget_total?: number | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  body_type?: string | null;
+  skin_tone?: string | null;
+  avoid_items?: string[];
+  avoid_items_acknowledged?: boolean;
+  awaiting_spot_pick?: boolean;
+  missing_fields?: string[];
 }
 
 export interface DailyWeather {
@@ -31,6 +53,7 @@ export interface DailyOutfit {
   outfit_summary: string;
   search_keywords: string[];
   recommendation_reason: string;
+  alternative_outfit_summary?: string;
 }
 
 export interface ProductCard {
@@ -102,6 +125,7 @@ export interface TravelReport {
 }
 
 export type PlanningPhase = "collecting" | "planning" | "done";
+export type InputMode = "chat" | "form";
 
 export interface XhsQueryDebugEntry {
   trip_date: string;
@@ -118,7 +142,9 @@ export interface XhsQueryDebugEntry {
 }
 
 export interface PlanningState {
+  input_mode?: InputMode;
   messages: ChatMessage[];
+  chat_intent?: ChatIntentDraft | null;
   trip: Record<string, unknown> | null;
   weather: DailyWeather[];
   outfits: DailyOutfit[];

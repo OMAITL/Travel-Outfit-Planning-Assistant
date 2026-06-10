@@ -39,6 +39,10 @@ class BudgetByCategory(BaseModel):
 
 class TripPreferences(BaseModel):
     activities: list[str] = Field(default_factory=list)
+    scene_type: str | None = Field(
+        default=None,
+        description="穿搭场景：拍照 / 通勤 / 度假 / 徒步 / 混合",
+    )
     gender: str | None = None
     style: str = "休闲"
     spot_names: list[str] = Field(default_factory=list, description="User-selected scenic spots")
@@ -119,7 +123,11 @@ class DailyOutfit(BaseModel):
     search_keywords: list[str] = Field(default_factory=list)
     recommendation_reason: str = Field(
         default="",
-        description="Why this outfit fits weather, body type, and user preferences",
+        description="Why this outfit fits weather, body type, scene, and user preferences",
+    )
+    alternative_outfit_summary: str = Field(
+        default="",
+        description="Optional backup outfit in pipe-separated format",
     )
 
     @field_validator("search_keywords", mode="before")
@@ -169,6 +177,10 @@ class DayItinerary(BaseModel):
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str = Field(..., min_length=1)
+    options: list[str] = Field(
+        default_factory=list,
+        description="Quick-reply choices shown under assistant messages in chat UI",
+    )
 
 
 class OutfitLookImage(BaseModel):
@@ -279,8 +291,19 @@ class PlanningPhase(StrEnum):
     DONE = "done"
 
 
+InputMode = Literal["chat", "form"]
+
+
 class PlanningState(BaseModel):
+    input_mode: InputMode = Field(
+        default="form",
+        description="chat = text report only (skip Taobao + AI image); form = full rich report",
+    )
     messages: list[ChatMessage] = Field(default_factory=list)
+    chat_intent: dict | None = Field(
+        default=None,
+        description="Partial outfit-first intent during chat collection (ChatIntentDraft JSON)",
+    )
     trip: TripContext | None = None
     itinerary: list[DayItinerary] = Field(
         default_factory=list,

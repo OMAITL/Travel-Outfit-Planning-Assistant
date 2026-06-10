@@ -88,6 +88,7 @@ def _format_trip(state: PlanningState) -> str:
         "trip_days": trip.trip_days,
         "party_size": prefs.party_size,
         "activities": prefs.activities,
+        "scene_type": prefs.scene_type,
         "gender": prefs.gender,
         "style": prefs.style,
         "height_cm": prefs.height_cm,
@@ -175,7 +176,8 @@ def stylist_node(state: PlanningState, *, llm=None) -> PlanningState:
     stylist_retry_hint = (
         "Your previous reply was null or invalid. "
         'Return ONLY JSON: {"outfits": [{"date": "YYYY-MM-DD", "outfit_summary": "...", '
-        '"recommendation_reason": "...", "search_keywords": ["..."]}]} '
+        '"recommendation_reason": "...", "alternative_outfit_summary": "", '
+        '"search_keywords": ["..."]}]} '
         "with one outfit object for each trip day."
     )
 

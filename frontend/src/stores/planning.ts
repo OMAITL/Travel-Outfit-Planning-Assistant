@@ -1,10 +1,21 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { postPlan } from "@/api/client";
-import type { City, PlanningState, Spot, TripFormPayload } from "@/api/types";
+import type { City, InputMode, PlanningState, Spot, TripFormPayload } from "@/api/types";
 import { STATIC_CITIES } from "@/data/cities";
 import { addDays, parseDate, weatherIcon } from "@/utils/format";
 import { planAutoItineraryIds } from "@/utils/itinerary";
+import {
+  buildSessionRecord,
+  deleteSessionRecord,
+  getSessionRecord,
+  listSessionHistory,
+  newSessionId,
+  upsertSessionRecord,
+  type SessionRecord,
+  type SessionUiSnapshot,
+  type FormDraftSnapshot,
+} from "@/utils/sessionHistory";
 
 const WEEKDAY_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
@@ -63,6 +74,7 @@ export const usePlanningStore = defineStore("planning", () => {
   const selectedDayIndex = ref(0);
   const manualActiveDay = ref(0);
   const inputTab = ref<"form" | "chat">("form");
+  const reportHighlight = ref(false);
   const demoReportActive = ref(false);
   const editItinerary = ref(false);
   const toast = ref<string | null>(null);
@@ -70,10 +82,140 @@ export const usePlanningStore = defineStore("planning", () => {
   const currentCityKey = ref("dali");
   const selectedSpotIds = ref<string[]>([]);
   const days = ref<TripDay[]>(createDefaultEmptyDays());
+  const historyOpen = ref(false);
+  const sessionHistory = ref<SessionRecord[]>(listSessionHistory());
+  const activeSessionByMode = ref<{ form?: string; chat?: string }>({});
+  const lastFormDraft = ref<FormDraftSnapshot | null>(null);
+  const formDraftRestoreTick = ref(0);
+
+  const activeSessionId = computed(() => activeSessionByMode.value[inputTab.value]);
+
+  function setFormDraft(draft: FormDraftSnapshot) {
+    lastFormDraft.value = JSON.parse(JSON.stringify(draft));
+  }
+
+  function uiSnapshot(): SessionUiSnapshot {
+    return {
+      currentCityKey: currentCityKey.value,
+      selectedSpotIds: [...selectedSpotIds.value],
+      days: JSON.parse(JSON.stringify(days.value)) as TripDay[],
+      planMode: planMode.value,
+      selectedDayIndex: selectedDayIndex.value,
+      demoReportActive: demoReportActive.value,
+      formDraft: lastFormDraft.value
+        ? (JSON.parse(JSON.stringify(lastFormDraft.value)) as FormDraftSnapshot)
+        : undefined,
+    };
+  }
+
+  function ensureActiveSession(mode: InputMode): string {
+    let id = activeSessionByMode.value[mode];
+    if (!id) {
+      id = newSessionId();
+      activeSessionByMode.value = { ...activeSessionByMode.value, [mode]: id };
+    }
+    return id;
+  }
+
+  function persistCurrentSession(mode?: InputMode) {
+    const currentMode = mode ?? inputTab.value;
+    const hasContent =
+      (state.value?.report?.daily_cards?.length ?? 0) > 0 ||
+      (state.value?.messages?.length ?? 0) > 0 ||
+      !!state.value?.chat_intent;
+    if (!hasContent) return;
+
+    const id = ensureActiveSession(currentMode);
+    const existing = getSessionRecord(id);
+    const record = buildSessionRecord(id, currentMode, state.value, uiSnapshot(), existing);
+    upsertSessionRecord(record);
+    sessionHistory.value = listSessionHistory();
+  }
+
+  function openHistoryDrawer() {
+    historyOpen.value = true;
+  }
+
+  function closeHistoryDrawer() {
+    historyOpen.value = false;
+  }
+
+  function loadSession(id: string) {
+    const rec = getSessionRecord(id);
+    if (!rec) return;
+
+    activeSessionByMode.value = { ...activeSessionByMode.value, [rec.mode]: rec.id };
+    inputTab.value = rec.mode;
+    state.value = rec.state ? JSON.parse(JSON.stringify(rec.state)) : null;
+    error.value = null;
+    demoReportActive.value = rec.ui?.demoReportActive ?? false;
+
+    if (rec.ui?.currentCityKey) currentCityKey.value = rec.ui.currentCityKey;
+    if (rec.ui?.selectedSpotIds) selectedSpotIds.value = [...rec.ui.selectedSpotIds];
+    if (rec.ui?.planMode) planMode.value = rec.ui.planMode;
+    if (rec.ui?.selectedDayIndex != null) selectedDayIndex.value = rec.ui.selectedDayIndex;
+
+    if (rec.ui?.days?.length) {
+      days.value = JSON.parse(JSON.stringify(rec.ui.days)) as TripDay[];
+    } else if (state.value?.report?.daily_cards?.length) {
+      syncDaysFromReport(state.value);
+    } else {
+      days.value = createDefaultEmptyDays();
+      syncAllDays();
+    }
+
+    if (rec.ui?.formDraft) {
+      lastFormDraft.value = JSON.parse(JSON.stringify(rec.ui.formDraft)) as FormDraftSnapshot;
+      formDraftRestoreTick.value += 1;
+    }
+
+    showToast(`已恢复：${rec.title}`);
+  }
+
+  function deleteSession(id: string) {
+    deleteSessionRecord(id);
+    sessionHistory.value = listSessionHistory();
+    const next = { ...activeSessionByMode.value };
+    if (next.form === id) delete next.form;
+    if (next.chat === id) delete next.chat;
+    activeSessionByMode.value = next;
+    showToast("已删除历史记录");
+  }
 
   const hasReport = computed(
     () => (state.value?.report?.daily_cards?.length ?? 0) > 0 || demoReportActive.value,
   );
+
+  const hasLiveReport = computed(
+    () => (state.value?.report?.daily_cards?.length ?? 0) > 0,
+  );
+
+  const isChatMode = computed(() => inputTab.value === "chat");
+
+  const chatCollecting = computed(
+    () =>
+      isChatMode.value &&
+      !loading.value &&
+      !hasLiveReport.value &&
+      (state.value?.messages?.length ?? 0) > 0,
+  );
+
+  const chatGenerating = computed(() => isChatMode.value && loading.value);
+
+  const showChatEmpty = computed(
+    () =>
+      isChatMode.value &&
+      !loading.value &&
+      !hasLiveReport.value &&
+      (state.value?.messages?.length ?? 0) === 0,
+  );
+
+  function highlightReportPanel() {
+    reportHighlight.value = true;
+    window.setTimeout(() => {
+      reportHighlight.value = false;
+    }, 2000);
+  }
 
   const currentCity = computed(() => cities.value.find((c) => c.key === currentCityKey.value));
 
@@ -195,6 +337,11 @@ export const usePlanningStore = defineStore("planning", () => {
   }
 
   function reset() {
+    persistCurrentSession();
+    activeSessionByMode.value = {
+      ...activeSessionByMode.value,
+      [inputTab.value]: newSessionId(),
+    };
     state.value = null;
     error.value = null;
     selectedDayIndex.value = 0;
@@ -202,6 +349,7 @@ export const usePlanningStore = defineStore("planning", () => {
     demoReportActive.value = false;
     editItinerary.value = false;
     toast.value = null;
+    reportHighlight.value = false;
     planMode.value = "auto";
     currentCityKey.value = "dali";
     selectedSpotIds.value = [];
@@ -304,8 +452,10 @@ export const usePlanningStore = defineStore("planning", () => {
       selectedDayIndex.value = 0;
       if (res.state.report?.daily_cards?.length) {
         syncDaysFromReport(res.state);
+        persistCurrentSession("form");
         showToast(`规划完成：${res.state.report.destination}`);
       } else if (res.state.phase === "collecting") {
+        persistCurrentSession("form");
         const last = res.state.messages.at(-1);
         showToast(last?.content ?? "请补充行程信息");
       } else {
@@ -397,8 +547,10 @@ export const usePlanningStore = defineStore("planning", () => {
       if (res.state.report?.daily_cards?.length) {
         syncDaysFromReport(res.state);
         selectedDayIndex.value = 0;
-        showToast("已更新行程报告");
+        persistCurrentSession("chat");
+        showToast("行程报告已生成");
       } else {
+        persistCurrentSession("chat");
         const last = res.state.messages.at(-1);
         showToast(last?.content ?? "已收到，请继续补充信息");
       }
@@ -420,6 +572,12 @@ export const usePlanningStore = defineStore("planning", () => {
     selectedDayIndex,
     manualActiveDay,
     inputTab,
+    reportHighlight,
+    isChatMode,
+    chatCollecting,
+    chatGenerating,
+    showChatEmpty,
+    hasLiveReport,
     demoReportActive,
     hasReport,
     editItinerary,
@@ -450,6 +608,18 @@ export const usePlanningStore = defineStore("planning", () => {
     toggleEditItinerary,
     submitTrip,
     sendChat,
+    highlightReportPanel,
     showToast,
+    historyOpen,
+    sessionHistory,
+    activeSessionId,
+    openHistoryDrawer,
+    closeHistoryDrawer,
+    loadSession,
+    deleteSession,
+    persistCurrentSession,
+    setFormDraft,
+    formDraftRestoreTick,
+    lastFormDraft,
   };
 });

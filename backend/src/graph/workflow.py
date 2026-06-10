@@ -56,6 +56,14 @@ def _route_after_trip(state: StateDict) -> Literal["weather", "__end__"]:
     return "weather"
 
 
+def _route_after_stylist(state: StateDict) -> Literal["assets", "report"]:
+    """Chat mode skips Taobao + AI image generation (assets node)."""
+    planning = _parse_state(state)
+    if planning.input_mode == "chat":
+        return "report"
+    return "assets"
+
+
 def compile_workflow():
     """Build and compile the planning StateGraph."""
     builder = StateGraph(dict)
@@ -74,7 +82,11 @@ def compile_workflow():
     builder.add_edge("itinerary", "inspiration")
     builder.add_edge("inspiration", "vision")
     builder.add_edge("vision", "stylist")
-    builder.add_edge("stylist", "assets")
+    builder.add_conditional_edges(
+        "stylist",
+        _route_after_stylist,
+        {"assets": "assets", "report": "report"},
+    )
     builder.add_edge("assets", "report")
     builder.add_edge("report", END)
 

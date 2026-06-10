@@ -32,7 +32,7 @@ from src.services.api_recorder import get_recording, list_recordings
 from app.data.city_spots import CITY_CATALOG, CITY_KEYS
 from app.utils.trip_message import build_trip_context, build_trip_message
 from src.config import reload_settings
-from src.graph.state import PlanningPhase, PlanningState
+from src.graph.state import InputMode, PlanningPhase, PlanningState
 from src.graph.workflow import run_planning
 from src.services.itinerary import build_itinerary
 
@@ -230,8 +230,30 @@ def _message_from_trip(form: TripFormIn) -> tuple[str, PlanningState]:
         plan_mode=form.plan_mode,
         daily_spot_names=form.daily_spot_names or None,
     )
-    initial = PlanningState(trip=ctx, itinerary=itinerary, phase=PlanningPhase.PLANNING)
+    initial = PlanningState(
+        trip=ctx,
+        itinerary=itinerary,
+        phase=PlanningPhase.PLANNING,
+        input_mode="form",
+    )
     return message, initial
+
+
+def _resolve_input_mode(
+    body: PlanRequest,
+    prior: PlanningState | None,
+) -> InputMode:
+    if body.trip is not None:
+        return "form"
+    if prior is not None and prior.input_mode:
+        return prior.input_mode
+    return "chat"
+
+
+def _with_input_mode(state: PlanningState | None, mode: InputMode) -> PlanningState:
+    if state is None:
+        return PlanningState(input_mode=mode)
+    return state.model_copy(update={"input_mode": mode})
 
 
 @app.post("/api/plan", response_model=PlanResponse)
@@ -263,6 +285,9 @@ def plan(body: PlanRequest) -> PlanResponse:
 
     if not message:
         raise HTTPException(status_code=400, detail="message or trip is required")
+
+    input_mode = _resolve_input_mode(body, prior)
+    initial = _with_input_mode(initial, input_mode)
 
     try:
         result = run_planning(message, state=initial)

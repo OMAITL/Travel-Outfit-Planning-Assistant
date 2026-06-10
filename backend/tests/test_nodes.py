@@ -230,6 +230,15 @@ def test_trip_node_complete_trip() -> None:
         destination="东京",
         start_date=date(2026, 7, 1),
         end_date=date(2026, 7, 5),
+        scene_type="度假",
+        gender="女",
+        spot_names=["市区闲逛"],
+        budget_per_item=200.0,
+        body_type="标准",
+        height_cm=165.0,
+        weight_kg=55.0,
+        skin_tone="自然",
+        avoid_items_acknowledged=True,
         is_complete=True,
     )
     result = trip_node(state, llm=_mock_llm(extraction))
